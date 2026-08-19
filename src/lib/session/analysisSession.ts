@@ -356,19 +356,25 @@ export async function runAnalysisPipeline(
           video.oncanplay = () => resolve();
         });
 
+        const extractionStart = performance.now();
         let rawFrames = await extractLandmarkSequence(provider, video, sampleFps, (frac) => report(3, frac));
+        const firstPassMs = performance.now() - extractionStart;
 
         // Recovery pass for weak detections: retry with a denser/safer sampling profile
         // and keep whichever pass yields the better frame-level detection rate.
+        // Skipped when the first pass was already slow — doubling a slow stage
+        // makes the UI look frozen for very little analytical gain.
         const initialDetectedFrames = countDetectedFrames(rawFrames);
         const initialDetectionRate = rawFrames.length > 0 ? initialDetectedFrames / rawFrames.length : 0;
-        const shouldRetryExtraction = shouldRunRecoveryPass(
-          initialDetectionRate,
-          assessment.frameUsabilityPct,
-        );
+        const shouldRetryExtraction =
+          firstPassMs < 45_000 &&
+          shouldRunRecoveryPass(
+            initialDetectionRate,
+            assessment.frameUsabilityPct,
+          );
 
         if (shouldRetryExtraction) {
-          const retryFps = clamp(sampleFps + 2, 10, 20);
+          const retryFps = clamp(sampleFps + 2, 10, 18);
           if (retryFps !== sampleFps) {
             if ('resetTimestampSequence' in provider) {
               (provider as { resetTimestampSequence: () => void }).resetTimestampSequence();
@@ -970,11 +976,14 @@ function computeAdaptiveSamplingFps(
   const approxMbps = (videoBytes * 8) / (duration * 1_000_000);
   const decodePenalty = clamp((approxMbps - 5) / 25, 0, 0.35);
 
-  let fps = 15 + Math.round((cpuScore * 0.45 + qualityScore * 0.55) * 15);
+  // Foot strikes occur at ~2 Hz, so 10-18 fps sampling is plenty for gait
+  // metrics. Denser sampling multiplies per-frame ML inference cost and made
+  // the "Detecting body landmarks" stage appear frozen on slower devices.
+  let fps = 10 + Math.round((cpuScore * 0.45 + qualityScore * 0.55) * 8);
 
   // If we detected too few cycles on a usable video, sample denser.
   if (assessment.detectedGaitCycles < 2 && assessment.frameUsabilityPct >= 0.35) {
-    fps += 5;
+    fps += 3;
   }
 
   // High camera shake reduces effective information gain from very high FPS.
@@ -983,7 +992,7 @@ function computeAdaptiveSamplingFps(
   }
 
   fps = Math.round(fps * (1 - decodePenalty));
-  return clamp(Math.max(15, fps), 15, 30);
+  return clamp(fps, 10, 18);
 }
 
 function computeAdaptiveSmoothingAlpha(assessment: VideoQualityAssessment): number {

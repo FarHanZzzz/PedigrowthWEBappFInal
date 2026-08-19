@@ -4,7 +4,11 @@
 import type { PoseProvider, LandmarkFrame } from '@/lib/types';
 
 const MAX_ANALYSIS_DURATION_SECONDS = 20;
-const SEEK_TIMEOUT_MS = 2500;
+const SEEK_TIMEOUT_MS = 1500;
+// Hard cap for one extraction pass. On slow devices (CPU-only WASM inference,
+// sluggish video seeks) an unbounded loop can run for many minutes and the UI
+// appears frozen. Past this budget we stop and analyze the frames we have.
+const EXTRACTION_TIME_BUDGET_MS = 90_000;
 
 /**
  * Create a pose provider instance.
@@ -42,8 +46,17 @@ export async function extractLandmarkSequence(
 
   const interval = 1 / targetFps;
   const sampleCount = Math.max(1, Math.floor(duration * targetFps));
+  const startedAt = performance.now();
 
   for (let sampleIdx = 0; sampleIdx < sampleCount; sampleIdx++) {
+    if (performance.now() - startedAt > EXTRACTION_TIME_BUDGET_MS) {
+      console.warn(
+        `[Pedi-Growth] Landmark extraction exceeded ${EXTRACTION_TIME_BUDGET_MS / 1000}s budget; ` +
+        `continuing with ${frames.length}/${sampleCount} sampled frames.`,
+      );
+      break;
+    }
+
     const time = Math.min(sampleIdx * interval, duration);
     await seekVideo(video, time, SEEK_TIMEOUT_MS);
 

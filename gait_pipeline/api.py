@@ -212,6 +212,14 @@ def build_app(
     def health() -> Dict[str, str]:
         return {"status": "ok"}
 
+    @app.get("/api/health")
+    def api_health() -> Dict[str, Any]:
+        return {
+            "status": "online",
+            "provider": "Pedi-Growth Gait Pipeline",
+            "models": ["xgboost-gait-risk"],
+        }
+
     @app.get("/validation-codes")
     def validation_codes() -> Dict[str, Dict[str, str]]:
         return {"error_codes": ERROR_CODES}
