@@ -635,9 +635,9 @@ export default function ClinicianResultPage() {
             </button>
           </div>
 
-          <h1 className="text-2xl font-bold">Clinical Handoff Packet</h1>
+          <h1 className="medical-title text-2xl font-semibold sm:text-3xl">Clinician packet</h1>
           <p className="text-sm text-muted-foreground">
-            Decision-first summary for clinical review. Advanced evidence is collapsed in section 7.
+            Decision-first summary for clinical review. Advanced evidence stays in the Evidence tab.
           </p>
 
           <div className="print-hidden inline-flex w-full max-w-lg items-center rounded-xl border border-border/60 bg-card/60 p-1 backdrop-blur-sm shadow-xs">
@@ -666,7 +666,7 @@ export default function ClinicianResultPage() {
               <div className="flex flex-col md:flex-row">
                 {/* Left side: Key Clinical Signal */}
                 <div className="flex flex-1 flex-col justify-center border-b p-5 md:border-b-0 md:border-r border-border/60 bg-surface-container-low/30">
-                  <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Overall Diagnostic Signal</p>
+                  <p className="text-sm font-medium text-muted-foreground">Overall concern signal</p>
                   <div className="mt-2 flex items-center gap-3">
                     <Badge variant="outline" className={`text-xs px-2.5 py-1 uppercase tracking-wider font-bold shadow-xs ${CONCERN_BADGE_STYLES[overallConcernLevel]}`}>
                       {overallConcernLabel}
@@ -718,7 +718,7 @@ export default function ClinicianResultPage() {
 
                   return (
                     <div key={domain.key} className="relative overflow-hidden rounded-xl border border-border/60 bg-card/80 p-4 shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
-                      <p className="text-[13px] font-bold text-foreground/90 uppercase tracking-wide mb-3">{domain.label}</p>
+                      <p className="mb-3 text-sm font-semibold">{domain.label}</p>
                       <div className="flex flex-col gap-2 items-start">
                         <Badge
                           variant="outline"

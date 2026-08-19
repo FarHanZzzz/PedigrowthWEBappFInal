@@ -7,16 +7,15 @@ import {
   AlertTriangle,
   ArrowRight,
   CheckCircle2,
-  ClipboardList,
   FileSearch,
   FileText,
   RefreshCw,
-  Stethoscope,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatAgeMonths } from "@/lib/presentation/age";
 import { collectResultIds, readResultRaw } from "@/lib/session/sessionStorage";
 import { fetchRecentResultsFromCloud, type CloudResultRecord } from "@/lib/db/cloudStorage";
 import {
@@ -228,52 +227,23 @@ export default function ClinicianPortalPage() {
   }), [patients]);
 
   return (
-    <div className="relative min-h-dvh overflow-hidden">
-      <div className="pointer-events-none absolute -left-32 -top-16 h-64 w-64 rounded-full bg-accent/10 blur-3xl" />
-
-      {/* Header */}
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between border-b border-border/60 bg-card/80 px-4 py-4 backdrop-blur-sm sm:px-6">
-        <Link href="/" className="inline-flex items-center gap-2">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Stethoscope className="h-4 w-4" />
-          </span>
-          <div>
-            <span className="block text-sm font-semibold tracking-tight">Pedi-Growth</span>
-            <span className="block text-[10px] text-muted-foreground">Clinician Portal</span>
+    <div className="mx-auto w-full max-w-6xl space-y-6">
+      <section className="medical-surface p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="medical-title text-3xl font-semibold">Clinician dashboard</h1>
+            <p className="text-sm text-muted-foreground">
+              Open a packet, review evidence, and send a follow-up note the family can see.
+            </p>
           </div>
-        </Link>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="gap-1.5 text-[11px]">
-            <Stethoscope className="h-3 w-3" />
-            Clinician / Specialist
-          </Badge>
-          <Link href="/">
-            <Button variant="ghost" size="sm" className="text-xs text-muted-foreground">← Switch Portal</Button>
-          </Link>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6">
-
-        {/* Banner */}
-        <section className="med-slide-up medical-surface p-6 sm:p-7">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Clinician Dashboard</p>
-              <h1 className="medical-title text-3xl font-semibold text-foreground">Patient Caseload</h1>
-              <p className="text-sm text-muted-foreground">
-                Review all patient assessments, open clinical handoff packets, and submit follow-up notes.
-              </p>
-            </div>
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary" className="gap-1.5 px-3 py-1.5 text-xs">
                 <Users className="h-3.5 w-3.5" />
                 {patients.length} {patients.length === 1 ? "patient" : "patients"} in session
               </Badge>
               <Link href="/start">
-                <Button className="cta-gradient gap-2 rounded-xl" size="sm">
-                  <ClipboardList className="h-4 w-4" />
-                  New Intake
+                <Button className="rounded-xl" size="sm">
+                  New check
                 </Button>
               </Link>
             </div>
@@ -283,10 +253,10 @@ export default function ClinicianPortalPage() {
         {/* Stats */}
         <section className="med-slide-up med-stagger-1 grid gap-3 sm:grid-cols-4">
           {[
-            { label: "Total Patients", value: stats.total, icon: Users },
-            { label: "Stable", value: stats.stable, icon: CheckCircle2 },
-            { label: "Follow-Up", value: stats.followUp, icon: Activity },
-            { label: "Retake Needed", value: stats.retake, icon: RefreshCw },
+            { label: "Walking checks", value: stats.total, icon: Users },
+            { label: "On track", value: stats.stable, icon: CheckCircle2 },
+            { label: "Follow-up", value: stats.followUp, icon: Activity },
+            { label: "Retake needed", value: stats.retake, icon: RefreshCw },
           ].map((s) => (
             <Card key={s.label} className="bg-card shadow-[0_12px_30px_rgba(14,31,41,0.07)]">
               <CardContent className="flex items-center justify-between p-4">
@@ -307,9 +277,9 @@ export default function ClinicianPortalPage() {
         {/* Patient Table */}
         <Card className="med-slide-up med-stagger-2 overflow-hidden border-border/70">
           <CardHeader className="border-b border-border/60 bg-card pb-4">
-            <CardTitle className="text-lg">Patient Assessments</CardTitle>
-            <p className="text-xs text-muted-foreground">
-              All assessments from this session. Click &quot;Open Packet&quot; to access the full clinical handoff view.
+            <CardTitle className="text-lg">Walking checks</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Open a packet to review evidence and send a note the family can see.
             </p>
           </CardHeader>
           <CardContent className="p-0">
@@ -318,14 +288,13 @@ export default function ClinicianPortalPage() {
                 <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
                   <FileSearch className="h-5 w-5" />
                 </span>
-                <p className="text-sm font-medium text-foreground">No patient assessments yet</p>
-                <p className="max-w-md text-xs text-muted-foreground">
-                  No assessments have been recorded in this session. Ask the parent to complete a new intake,
-                  or start one directly below.
+                <p className="text-sm font-medium text-foreground">No walking checks yet</p>
+                <p className="max-w-md text-sm text-muted-foreground">
+                  When a family completes a check, it appears here. You can also start one now.
                 </p>
                 <Link href="/start">
-                  <Button variant="outline" className="gap-2 text-xs">
-                    Start New Intake <ArrowRight className="h-3.5 w-3.5" />
+                  <Button variant="outline" className="rounded-xl">
+                    Start a walking check <ArrowRight className="h-3.5 w-3.5" />
                   </Button>
                 </Link>
               </div>
@@ -333,10 +302,10 @@ export default function ClinicianPortalPage() {
               <div className="overflow-x-auto">
                 <table className="min-w-full border-collapse text-left text-sm">
                   <thead>
-                    <tr className="border-b border-border/60 bg-surface-container-low text-xs uppercase tracking-wide text-muted-foreground">
-                      <th className="px-4 py-3 font-semibold">Patient</th>
-                      <th className="px-4 py-3 font-semibold">Assessed</th>
-                      <th className="px-4 py-3 font-semibold">Gait Observation</th>
+                    <tr className="border-b border-border/60 bg-muted/40 text-xs text-muted-foreground">
+                      <th className="px-4 py-3 font-semibold">Child</th>
+                      <th className="px-4 py-3 font-semibold">Date</th>
+                      <th className="px-4 py-3 font-semibold">What we noticed</th>
                       <th className="px-4 py-3 font-semibold">Follow-Up Priority</th>
                       <th className="px-4 py-3 font-semibold">Quality</th>
                       <th className="px-4 py-3 font-semibold">Status</th>
@@ -355,7 +324,7 @@ export default function ClinicianPortalPage() {
                           <td className="px-4 py-3">
                             <p className="font-semibold text-foreground">{patient.childName}</p>
                             <p className="text-xs text-muted-foreground">
-                              {patient.ageMonths !== null ? `${patient.ageMonths} months` : "Age unknown"}
+                              {formatAgeMonths(patient.ageMonths)}
                             </p>
                           </td>
                           <td className="px-4 py-3 text-xs text-muted-foreground">
@@ -425,7 +394,6 @@ export default function ClinicianPortalPage() {
             </p>
           </CardContent>
         </Card>
-      </main>
     </div>
   );
 }

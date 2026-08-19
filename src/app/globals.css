@@ -149,9 +149,6 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
-    background-image:
-      radial-gradient(circle at 12% -8%, color-mix(in oklch, var(--primary) 17%, transparent) 0, transparent 40%),
-      radial-gradient(circle at 92% 6%, color-mix(in oklch, var(--accent) 22%, transparent) 0, transparent 34%);
     font-feature-settings: "rlig" 1, "calt" 1;
     font-weight: 450;
   }
@@ -168,7 +165,7 @@
   }
 
   .medical-surface {
-    @apply rounded-[1.35rem] border border-border/70 bg-card shadow-[0_18px_42px_rgba(16,36,45,0.10)];
+    @apply rounded-2xl border border-border/70 bg-card shadow-[0_10px_28px_rgba(16,36,45,0.06)];
   }
 
   .medical-title {

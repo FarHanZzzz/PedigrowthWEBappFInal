@@ -37,6 +37,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { formatAgeMonths } from "@/lib/presentation/age";
 import { FOLLOWUP_BADGE_STYLES, FOLLOWUP_CALLOUT_STYLES } from "@/lib/presentation/severity";
 import {
   readSession,
@@ -305,21 +306,21 @@ function ConcernPageContent() {
     <div className="px-4 py-6 sm:px-6">
       <div className="mx-auto max-w-4xl">
         {/* ── Header (preserved) ──────────────────────────────────── */}
-        <div className="clinical-layer mb-5 rounded-[1.8rem] px-6 py-7 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-container-lowest">
-            <Heart className="h-6 w-6 text-route-a" />
+        <div className="medical-surface mb-5 px-6 py-7 text-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <Heart className="h-6 w-6" />
           </div>
-          <h1 data-display="true" className="text-3xl font-semibold text-foreground">
-            {isSupplementalFlow ? "Motor Development Check" : "Concern Navigator"}
+          <h1 className="medical-title text-3xl font-semibold text-foreground">
+            {isSupplementalFlow ? "Motor development check" : "Concern notes"}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {isSupplementalFlow
-              ? `This optional screen adds milestone context to ${childName}'s gait result for a stronger parent and clinician handoff.`
-              : `Since ${childName} isn&apos;t walking independently yet, we&apos;ll help you organize your observations for a professional conversation.`}
+              ? `This optional screen adds milestone context to ${childName}'s walking result for a stronger parent and clinician handoff.`
+              : `Since ${childName} isn't walking independently yet, we'll help you organize observations for a professional conversation.`}
           </p>
           {childAge !== null && (
-            <Badge variant="outline" className="mt-2 text-[11px]">
-              {childAge} months old
+            <Badge variant="outline" className="mt-2 text-xs">
+              {formatAgeMonths(childAge)}
             </Badge>
           )}
         </div>

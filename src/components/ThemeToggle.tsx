@@ -10,6 +10,7 @@ export function ThemeToggle() {
 
   return (
     <Button
+      className="relative"
       variant="ghost"
       size="icon"
       onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}

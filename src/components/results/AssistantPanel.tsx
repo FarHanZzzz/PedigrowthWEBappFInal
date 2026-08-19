@@ -356,13 +356,13 @@ export default function AssistantPanel({
       aria-label="AI Assistant Panel"
       className={`h-full min-h-0 flex flex-col !gap-0 overflow-hidden transition-all duration-300 motion-reduce:transition-none ${isOpen ? 'w-full' : 'w-12'}`}
     >
-      <CardHeader className="border-b bg-linear-to-r from-blue-50 to-indigo-50 p-3">
+      <CardHeader className="border-b bg-muted/40 p-3">
         <div className="flex items-center justify-between">
           {isOpen ? (
             <>
               <div className="flex items-center gap-2">
-                <MessageCircle className="h-5 w-5 text-blue-600" />
-                <CardTitle className="text-sm font-semibold">AI Assistant</CardTitle>
+                <MessageCircle className="h-5 w-5 text-primary" />
+                <CardTitle className="text-sm font-semibold">Ask about this clip</CardTitle>
                 <Badge variant="secondary" className="text-xs">
                   {mode === 'caregiver' ? 'Simple' : 'Technical'}
                 </Badge>
@@ -371,7 +371,7 @@ export default function AssistantPanel({
                 variant="ghost"
                 size="icon-sm"
                 onClick={onToggle}
-                className="hover:bg-blue-100"
+                className="hover:bg-muted"
                 aria-label="Close assistant"
               >
                 <X className="h-4 w-4" />

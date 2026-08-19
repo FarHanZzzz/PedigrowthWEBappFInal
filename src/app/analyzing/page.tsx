@@ -2,52 +2,31 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import "./analyzing.css";
 import {
-  Activity,
-  CheckCircle2,
-  Loader2,
   AlertTriangle,
   RefreshCw,
-  ArrowLeft,
-  Search,
-  Cpu,
-  ScanLine,
-  Footprints,
-  BarChart3,
-  FileCheck,
-  X,
 } from "lucide-react";
+import { JourneyStepper } from "@/components/layout/JourneyStepper";
+import { Button } from "@/components/ui/button";
 import { runAnalysisPipeline } from "@/lib/session/analysisSession";
-import { getVideo, saveResult } from "@/lib/session/videoStore";
+import { getVideo, saveResult, storeVideo } from "@/lib/session/videoStore";
 import {
   readSessionRaw,
+  writeResult,
   writeSession,
 } from "@/lib/session/sessionStorage";
 import { saveResultToCloud, uploadVideoToCloud } from "@/lib/db/cloudStorage";
 import type { PipelineProgress } from "@/lib/session/analysisSession";
 
 const STAGE_LABELS = [
-  "Loading video",
-  "Initializing pose detection",
-  "Checking video quality",
-  "Detecting body landmarks",
-  "Extracting gait features",
-  "Computing concern profile",
-  "Generating results",
+  "Reading the video",
+  "Getting ready",
+  "Checking the clip",
+  "Finding body position",
+  "Measuring the walk",
+  "Writing the summary",
+  "Finishing up",
 ];
-
-const STAGE_DESCRIPTIONS = [
-  "Reading video file and preparing frames for analysis...",
-  "Loading AI models and preparing pose estimation engine...",
-  "Verifying video resolution, lighting, and framing quality...",
-  "Identifying 33 skeletal keypoints across each video frame...",
-  "Measuring joint angles, stride symmetry, and movement patterns...",
-  "Evaluating gait metrics against clinical reference data...",
-  "Compiling comprehensive results with annotated visualizations...",
-];
-
-const STAGE_ICONS = [Search, Cpu, ScanLine, Footprints, Activity, BarChart3, FileCheck];
 
 export default function AnalyzingPage() {
   const router = useRouter();
@@ -164,6 +143,12 @@ export default function AnalyzingPage() {
         try {
           const videoData = await getVideo(sessionId);
           if (videoData?.blob) {
+            await storeVideo(
+              resultId,
+              new File([videoData.blob], videoData.name || "clip.mp4", {
+                type: videoData.type || "video/mp4",
+              }),
+            ).catch(() => {});
             const cloudUrl = await uploadVideoToCloud(
               resultId,
               videoData.blob,
@@ -185,6 +170,7 @@ export default function AnalyzingPage() {
         }
 
         saveResult(resultId, payload).catch(() => {});
+        writeResult(resultId, payload);
 
         setCurrentStage(STAGE_LABELS.length);
         setProgress(100);
@@ -222,219 +208,75 @@ export default function AnalyzingPage() {
     };
   }, [router, analysisAttempt]);
 
-  // Circular progress SVG math
-  const radius = 26;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (progress / 100) * circumference;
+  const friendlyStage =
+    currentStage >= STAGE_LABELS.length
+      ? "Summary ready"
+      : STAGE_LABELS[Math.max(0, Math.min(currentStage, STAGE_LABELS.length - 1))];
 
-  /* â”€â”€ Error State â”€â”€ */
   if (error) {
     return (
-      <div className="analyzing-page">
-        <div className="analyzing-error">
-          <div className="analyzing-error__icon">
-            <AlertTriangle className="h-7 w-7" />
-          </div>
-          <h1 className="analyzing-error__title">Analysis Error</h1>
-          <p className="analyzing-error__desc">{error}</p>
-          <div className="analyzing-error__actions">
-            <button
-              className="error-btn error-btn--primary"
-              onClick={() => {
-                setError(null);
-                pipelineRan.current = false;
-                setCurrentStage(0);
-                setProgress(0);
-                setStageProgress(0);
-                setAnalysisAttempt((v) => v + 1);
-              }}
-            >
-              <RefreshCw className="h-4 w-4" />
-              Try Again
-            </button>
-            <button
-              className="error-btn error-btn--secondary"
-              onClick={() => router.push("/capture")}
-            >
-              Record a New Video
-            </button>
-          </div>
+      <div className="mx-auto flex min-h-[60vh] w-full max-w-md flex-col items-center justify-center px-4 text-center">
+        <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
+          <AlertTriangle className="h-6 w-6" />
+        </span>
+        <h1 className="mt-4 text-xl font-semibold">We couldn’t finish this clip</h1>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{error}</p>
+        <div className="mt-6 flex w-full flex-col gap-2">
+          <Button
+            onClick={() => {
+              setError(null);
+              pipelineRan.current = false;
+              setCurrentStage(0);
+              setProgress(0);
+              setStageProgress(0);
+              setAnalysisAttempt((v) => v + 1);
+            }}
+          >
+            <RefreshCw className="h-4 w-4" />
+            Try again
+          </Button>
+          <Button variant="outline" onClick={() => router.push("/capture")}>
+            Record a new video
+          </Button>
         </div>
       </div>
     );
   }
 
-  /* â”€â”€ Processing State â”€â”€ */
   return (
-    <div className="analyzing-page">
-      <div className="analyzing-container">
-        {/* Header */}
-        <div className="analyzing-header">
-          <button
-            className="analyzing-header__back"
-            onClick={() => router.push("/capture")}
-            aria-label="Go back"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-          <span className="analyzing-header__title">AI Processing</span>
-          <div className="analyzing-header__spacer" />
+    <div className="mx-auto w-full max-w-md space-y-8 py-6">
+      <JourneyStepper current={3} />
+
+      <div className="text-center">
+        <h1 className="medical-title text-2xl font-semibold">Looking at the walk</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Usually under a minute. Keep this screen open.</p>
+      </div>
+
+      <div className="medical-surface p-6">
+        <div className="flex items-end justify-between gap-3">
+          <p className="text-base font-semibold">{friendlyStage}</p>
+          <p className="text-sm font-medium text-primary">{Math.round(progress)}%</p>
         </div>
-
-        {/* Progress Card */}
-        <div className="progress-card">
-          <div className="progress-card__shimmer" />
-          <div className="progress-card__content">
-            <div className="progress-card__text">
-              <span className="progress-card__label">
-                {currentStage < STAGE_LABELS.length
-                  ? "Analyzing Gait..."
-                  : "Analysis Complete!"}
-              </span>
-              <span className="progress-card__steps">
-                {Math.min(currentStage + 1, STAGE_LABELS.length)}/{STAGE_LABELS.length} Steps Completed
-              </span>
-            </div>
-            <div className="circular-progress">
-              <svg className="circular-progress__svg" viewBox="0 0 64 64">
-                <circle
-                  className="circular-progress__track"
-                  cx="32"
-                  cy="32"
-                  r={radius}
-                />
-                <circle
-                  className="circular-progress__fill"
-                  cx="32"
-                  cy="32"
-                  r={radius}
-                  strokeDasharray={circumference}
-                  strokeDashoffset={strokeDashoffset}
-                />
-              </svg>
-              <span className="circular-progress__value">
-                {Math.round(progress)}%
-              </span>
-            </div>
-          </div>
-          <div className="progress-card__bar">
-            <div
-              className="progress-card__bar-fill"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
+        <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full rounded-full bg-primary transition-[width] duration-300"
+            style={{ width: `${Math.max(progress, 6)}%` }}
+          />
         </div>
+        <p className="mt-3 text-xs text-muted-foreground">
+          Finding body position and measuring step timing from this clip.
+        </p>
+      </div>
 
-        {/* Stage Icons Strip */}
-        <div className="stage-icons">
-          {STAGE_ICONS.map((Icon, i) => (
-            <div
-              key={i}
-              className={`stage-icon ${
-                i < currentStage
-                  ? "stage-icon--completed"
-                  : i === currentStage
-                  ? "stage-icon--active"
-                  : "stage-icon--pending"
-              }`}
-            >
-              {i < currentStage ? (
-                <CheckCircle2 className="h-4 w-4" />
-              ) : (
-                <Icon className="h-4 w-4" />
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Steps List */}
-        <div className="steps-list">
-          <h2 className="steps-list__title">Analyzing Gait Patterns</h2>
-
-          {STAGE_LABELS.map((label, i) => {
-            const isCompleted = i < currentStage;
-            const isActive = i === currentStage;
-
-            return (
-              <div
-                key={label}
-                className={`step-item ${
-                  isCompleted
-                    ? "step-item--completed"
-                    : isActive
-                    ? "step-item--active"
-                    : "step-item--pending"
-                }`}
-              >
-                <div
-                  className={`step-item__icon ${
-                    isCompleted
-                      ? "step-item__icon--completed"
-                      : isActive
-                      ? "step-item__icon--active"
-                      : "step-item__icon--pending"
-                  }`}
-                >
-                  {isCompleted ? (
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                  ) : isActive ? (
-                    <Loader2 className="h-3.5 w-3.5 spin-animation" />
-                  ) : (
-                    <div
-                      style={{
-                        width: "0.5rem",
-                        height: "0.5rem",
-                        borderRadius: "50%",
-                        background: "#c4d5d2",
-                      }}
-                    />
-                  )}
-                </div>
-
-                <div className="step-item__content">
-                  <span className="step-item__label">
-                    {isActive ? `${label}...` : label}
-                  </span>
-                  {(isCompleted || isActive) && (
-                    <p className="step-item__desc">
-                      {STAGE_DESCRIPTIONS[i]}
-                    </p>
-                  )}
-                  {isActive && (
-                    <>
-                      <div className="step-item__progress">
-                        <div
-                          className="step-item__progress-fill"
-                          style={{ width: `${stageProgress}%` }}
-                        />
-                      </div>
-                      <div className="step-item__skeleton">
-                        <div className="skeleton-line" />
-                        <div className="skeleton-line" />
-                        <div className="skeleton-line" />
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Bottom */}
-        <div className="analyzing-bottom">
-          <button
-            className="analyzing-cancel"
-            onClick={() => router.push("/capture")}
-          >
-            <X className="h-4 w-4" />
-            Cancel Analysis
-          </button>
-          <span className="analyzing-privacy">
-            🔒 Analysis runs on your device. The clip is saved so you can open results on phone or desktop.
-          </span>
-        </div>
+      <div className="flex flex-col items-center gap-3">
+        <Button variant="ghost" onClick={() => router.push("/capture")}>
+          Cancel
+        </Button>
+        <p className="max-w-xs text-center text-xs leading-relaxed text-muted-foreground">
+          Analysis runs on this device. The clip is saved so you can reopen results on phone or desktop.
+        </p>
       </div>
     </div>
   );
 }
+

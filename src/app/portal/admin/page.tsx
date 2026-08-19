@@ -7,17 +7,16 @@ import {
   AlertTriangle,
   ArrowRight,
   CheckCircle2,
-  ClipboardList,
   Database,
   FileSearch,
   RefreshCw,
   Shield,
   ShieldCheck,
-  Stethoscope,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatAgeMonths } from "@/lib/presentation/age";
 import { collectResultIds, readResultRaw } from "@/lib/session/sessionStorage";
 import { fetchRecentResultsFromCloud, type CloudResultRecord } from "@/lib/db/cloudStorage";
 import {
@@ -228,54 +227,23 @@ export default function AdminPortalPage() {
   }), [rows]);
 
   return (
-    <div className="relative min-h-dvh overflow-hidden">
-      <div className="pointer-events-none absolute -right-24 -top-16 h-56 w-56 rounded-full bg-muted/20 blur-3xl" />
-
-      {/* Header */}
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between border-b border-border/60 bg-card/80 px-4 py-4 backdrop-blur-sm sm:px-6">
-        <Link href="/" className="inline-flex items-center gap-2">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Stethoscope className="h-4 w-4" />
-          </span>
+    <div className="mx-auto w-full max-w-6xl space-y-5">
+      <section className="medical-surface p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <span className="block text-sm font-semibold tracking-tight">Pedi-Growth</span>
-            <span className="block text-[10px] text-muted-foreground">Admin Console</span>
+            <h1 className="medical-title text-3xl font-semibold">Admin overview</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Activity, quality, and routing across saved walking checks.
+            </p>
           </div>
-        </Link>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="gap-1.5 text-[11px]">
-            <Shield className="h-3 w-3" />
-            System Administrator
-          </Badge>
-          <Link href="/">
-            <Button variant="ghost" size="sm" className="text-xs text-muted-foreground">← Switch Portal</Button>
+          <Link href="/start">
+            <Button className="rounded-xl" size="lg">
+              New check
+              <ArrowRight className="h-4 w-4" />
+            </Button>
           </Link>
         </div>
-      </header>
-
-      <main className="mx-auto w-full max-w-6xl space-y-5 px-4 py-6 sm:px-6">
-
-        {/* Banner — matches history page style */}
-        <section className="medical-surface med-slide-up p-6 sm:p-7">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                Admin Console
-              </p>
-              <h1 className="medical-title text-3xl font-semibold text-foreground">System Overview</h1>
-              <p className="text-sm text-muted-foreground">
-                Full visibility across all assessment activity, quality results, and clinical routing on this platform.
-              </p>
-            </div>
-            <Link href="/start">
-              <Button className="cta-gradient gap-2 rounded-xl" size="lg">
-                <ClipboardList className="h-4 w-4" />
-                New Intake
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-        </section>
+      </section>
 
         {/* Assessment stats — 4-column like history page */}
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -372,7 +340,7 @@ export default function AdminPortalPage() {
                           <td className="px-4 py-3 align-top">
                             <p className="font-semibold text-foreground">{row.childName}</p>
                             <p className="text-xs text-muted-foreground">
-                              {row.ageMonths !== null ? `${row.ageMonths} months` : "Age unknown"}
+                              {formatAgeMonths(row.ageMonths)}
                             </p>
                             <p className="text-[11px] text-muted-foreground/70">ID: {row.id}</p>
                           </td>
@@ -458,7 +426,6 @@ export default function AdminPortalPage() {
             </div>
           </CardContent>
         </Card>
-      </main>
     </div>
   );
 }

@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Video,
   Camera,
   Upload,
   Circle,
@@ -34,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { JourneyStepper } from "@/components/layout/JourneyStepper";
 import { storeVideo } from "@/lib/session/videoStore";
 import {
   readSession,
@@ -183,6 +183,7 @@ export default function CapturePage() {
   const [isClinicianContextOpen, setIsClinicianContextOpen] = useState(() =>
     hasAnyContextValue(readSavedContextDraft()),
   );
+  const [showDemoTools, setShowDemoTools] = useState(false);
   const recordFileInputRef = useRef<HTMLInputElement>(null);
   const uploadFileInputRef = useRef<HTMLInputElement>(null);
   const [previewVideoElement, setPreviewVideoElement] = useState<HTMLVideoElement | null>(null);
@@ -345,6 +346,13 @@ export default function CapturePage() {
       }
     }
   }, [router]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setShowDemoTools(
+      params.get("demo") === "1" || process.env.NEXT_PUBLIC_DEMO_MODE === "true",
+    );
+  }, []);
 
   useEffect(() => {
     if (!isCameraOpen || !cameraStream || !previewVideoElement) {
@@ -524,44 +532,40 @@ export default function CapturePage() {
   }
 
   return (
-    <div className="min-h-[calc(100dvh-9rem)] bg-linear-to-b from-background to-muted/30 px-4 py-6 sm:px-6">
-      <div className="mx-auto max-w-2xl med-slide-up">
-        {/* Header */}
-        <div className="mb-4 rounded-2xl border border-border/60 bg-card/70 p-4 text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-            Guided Capture
-          </p>
-          <h1 className="medical-title mt-1 text-xl font-semibold text-foreground">
-            Record {childName}&apos;s walking
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Follow this quick guide for a clearer, more reliable result
-          </p>
-          {validationMode && (
-            <p className="mt-2 text-xs font-medium text-amber-700">
-              Validation mode is on. This run will fail loudly if analysis is not real.
-            </p>
-          )}
-        </div>
+    <div className="mx-auto w-full max-w-lg space-y-5">
+      <JourneyStepper current={2} />
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="guide" className="text-xs gap-1">
-              <Video className="h-3 w-3" />
-              Tips
+      <div className="text-center">
+        <h1 className="medical-title text-2xl font-semibold tracking-tight">
+          Record {childName}&apos;s walk
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Front view, full body, 4–6 steps. Keep the phone still.
+        </p>
+        {validationMode && showDemoTools && (
+          <p className="mt-2 text-xs font-medium text-amber-700">
+            Validation mode is on. This run will fail loudly if analysis is not real.
+          </p>
+        )}
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2 mb-4 h-11">
+            <TabsTrigger value="guide" className="gap-1">
+              Record
             </TabsTrigger>
             <TabsTrigger
               value="review"
               disabled={!videoFile}
-              className="text-xs gap-1"
+              className="gap-1"
             >
-              <CheckCircle2 className="h-3 w-3" />
               Review
             </TabsTrigger>
           </TabsList>
 
           {/* Guide Tab */}
           <TabsContent value="guide" className="space-y-4">
+            {showDemoTools && (
             <Card
               className={
                 approvedHeroClip
@@ -619,6 +623,7 @@ export default function CapturePage() {
                 </div>
               </CardContent>
             </Card>
+            )}
 
             {/* Side view callout */}
             <Card className="border-primary/30 bg-primary/5">
@@ -671,17 +676,17 @@ export default function CapturePage() {
             <div className="space-y-3 pt-2">
               <Button
                 size="lg"
-                className="touch-target w-full gap-2 text-base font-semibold"
+                className="h-12 w-full rounded-xl text-base font-semibold"
                 id="capture-record"
                 onClick={startCameraCapture}
               >
                 <Camera className="h-4 w-4" />
-                Record Video
+                Record video
               </Button>
               <Button
                 variant="outline"
                 size="lg"
-                className="touch-target w-full gap-2 text-base"
+                className="h-12 w-full rounded-xl text-base"
                 id="capture-upload"
                 onClick={() => {
                   if (uploadFileInputRef.current) {
@@ -690,7 +695,7 @@ export default function CapturePage() {
                 }}
               >
                 <Upload className="h-4 w-4" />
-                Upload Existing Video
+                Upload existing video
               </Button>
             </div>
 
@@ -811,8 +816,8 @@ export default function CapturePage() {
             <Card className="bg-surface-container-lowest/80">
               <CardContent className="space-y-3 p-4">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                    Preflight Quality Check
+                  <p className="text-sm font-semibold">
+                    Clip quality check
                   </p>
                   {isRunningPreflight ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-secondary/15 px-2 py-0.5 text-[10px] font-semibold text-foreground/80">
@@ -875,7 +880,7 @@ export default function CapturePage() {
                   aria-controls="clinician-context-dropdown"
                 >
                   <div className="space-y-1">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    <p className="text-sm font-semibold">
                       Optional clinician context
                     </p>
                     <p className="text-xs text-muted-foreground">
@@ -1038,7 +1043,7 @@ export default function CapturePage() {
                   </>
                 ) : (
                   <>
-                    {preflightResult?.overall === "fail" ? "Analyze Anyway" : "Analyze This Video"}
+                    {preflightResult?.overall === "fail" ? "Analyze anyway" : "Analyze this video"}
                     <ArrowRight className="h-4 w-4" />
                   </>
                 )}
@@ -1056,7 +1061,6 @@ export default function CapturePage() {
             </div>
           </TabsContent>
         </Tabs>
-      </div>
     </div>
   );
 }

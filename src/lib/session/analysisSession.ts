@@ -25,7 +25,7 @@ import {
   type XGBoostPrediction,
 } from '@/lib/api/gaitPredictClient';
 import { POSE } from '@/lib/pose/poseTypes';
-import { getVideo, deleteVideo } from './videoStore';
+import { getVideo } from './videoStore';
 import { buildAnalysisTrace } from '@/lib/trace/buildAnalysisTrace';
 import type { MetricTraceInput } from '@/lib/trace/buildAnalysisTrace';
 import type { AnalysisTrace, SuppressedMetricEntry } from '@/lib/trace/traceTypes';
@@ -278,7 +278,6 @@ export async function runAnalysisPipeline(
       provider = await createPoseProvider('mediapipe');
       await provider.initialize();
     } catch (err) {
-      await deleteVideo(sessionId).catch(() => {});
       return makeValidationFailureResult(
         nickname,
         ageMonths,
@@ -304,7 +303,6 @@ export async function runAnalysisPipeline(
 
       // ─── GRACEFUL DEGRADATION: only refuse for cannot_assess ───
       if (assessment.assessmentMode === 'cannot_assess') {
-        await deleteVideo(sessionId).catch(() => {});
         return makeCannotAssessResult(
           nickname,
           ageMonths,

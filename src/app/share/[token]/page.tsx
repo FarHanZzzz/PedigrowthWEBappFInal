@@ -74,7 +74,7 @@ export default function SharedPacketPage() {
 
   if (loading) {
     return (
-      <div className="min-h-dvh flex items-center justify-center px-4">
+      <div className="flex min-h-[50vh] items-center justify-center">
         <p className="text-sm text-muted-foreground">Loading shared packet...</p>
       </div>
     );
@@ -82,15 +82,15 @@ export default function SharedPacketPage() {
 
   if (error || !payload) {
     return (
-      <div className="min-h-dvh flex items-center justify-center px-4">
-        <Card className="max-w-lg w-full border-red-200 bg-red-50/60">
+      <div className="mx-auto flex min-h-[50vh] max-w-lg items-center">
+        <Card className="w-full border-destructive/30 bg-destructive/5">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base text-red-900 flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base text-destructive">
               <AlertTriangle className="h-4 w-4" />
               Share link unavailable
             </CardTitle>
           </CardHeader>
-          <CardContent className="text-sm text-red-800">{error ?? "Unknown error."}</CardContent>
+          <CardContent className="text-sm text-muted-foreground">{error ?? "Unknown error."}</CardContent>
         </Card>
       </div>
     );
@@ -100,60 +100,58 @@ export default function SharedPacketPage() {
   const clinician = payload.clinician;
 
   return (
-    <div className="min-h-dvh bg-linear-to-b from-background to-muted/30 px-4 py-8">
-      <div className="mx-auto max-w-3xl space-y-4">
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs text-muted-foreground">
-            <Link2 className="h-3.5 w-3.5" />
-            Shared clinician handoff packet
-          </div>
-          <h1 className="text-2xl font-bold">GAITBRIDGE Shared Packet</h1>
-          <p className="text-sm text-muted-foreground">
-            Observational gait documentation support. This shared report is non-diagnostic and intended for follow-up discussion.
-          </p>
+    <div className="mx-auto max-w-3xl space-y-5">
+      <div className="space-y-2 text-center">
+        <div className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">
+          <Link2 className="h-3.5 w-3.5" />
+          Shared clinician packet
         </div>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Caregiver Summary</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <p><strong>Observation:</strong> {String(caregiver.observationsText ?? "Not provided")}</p>
-            <p><strong>Confidence:</strong> {String(caregiver.confidenceText ?? "Not provided")}</p>
-            <p><strong>Limitations:</strong> {String(caregiver.limitationsText ?? "Not provided")}</p>
-            <p><strong>Follow-up:</strong> {String(caregiver.professionalEvalGuidance ?? "Not provided")}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Clinician Packet
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <p><strong>Structured notes:</strong> {String(clinician.structuredNotes ?? "Not provided")}</p>
-            <p><strong>Quality summary:</strong> {JSON.stringify(clinician.qualitySummary ?? {}, null, 2)}</p>
-            <p><strong>Concern domains:</strong> {JSON.stringify(clinician.concernDomains ?? {}, null, 2)}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Handoff Text</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <pre className="whitespace-pre-wrap rounded-lg bg-muted p-3 text-xs text-muted-foreground">
-              {payload.handoffText}
-            </pre>
-            <Button variant="outline" className="gap-2 text-xs" onClick={copyHandoff}>
-              {copied ? <Clipboard className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-              {copied ? "Copied" : "Copy handoff text"}
-            </Button>
-          </CardContent>
-        </Card>
+        <h1 className="medical-title text-3xl font-semibold">Pedi-Growth shared packet</h1>
+        <p className="text-sm text-muted-foreground">
+          Observational walking documentation. This shared report is not a diagnosis and is meant for follow-up discussion.
+        </p>
       </div>
+
+      <Card className="medical-surface">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Family summary</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm text-muted-foreground">
+          <p><strong className="text-foreground">Observation:</strong> {String(caregiver.observationsText ?? "Not provided")}</p>
+          <p><strong className="text-foreground">Confidence:</strong> {String(caregiver.confidenceText ?? "Not provided")}</p>
+          <p><strong className="text-foreground">Limitations:</strong> {String(caregiver.limitationsText ?? "Not provided")}</p>
+          <p><strong className="text-foreground">Follow-up:</strong> {String(caregiver.professionalEvalGuidance ?? "Not provided")}</p>
+        </CardContent>
+      </Card>
+
+      <Card className="medical-surface">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <FileText className="h-4 w-4" />
+            Clinician packet
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2 text-sm text-muted-foreground">
+          <p><strong className="text-foreground">Structured notes:</strong> {String(clinician.structuredNotes ?? "Not provided")}</p>
+          <p><strong className="text-foreground">Quality summary:</strong> {JSON.stringify(clinician.qualitySummary ?? {}, null, 2)}</p>
+          <p><strong className="text-foreground">Concern domains:</strong> {JSON.stringify(clinician.concernDomains ?? {}, null, 2)}</p>
+        </CardContent>
+      </Card>
+
+      <Card className="medical-surface">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Handoff text</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <pre className="whitespace-pre-wrap rounded-xl bg-muted p-3 text-xs text-muted-foreground">
+            {payload.handoffText}
+          </pre>
+          <Button variant="outline" className="rounded-xl" onClick={copyHandoff}>
+            {copied ? <Clipboard className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+            {copied ? "Copied" : "Copy handoff text"}
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }

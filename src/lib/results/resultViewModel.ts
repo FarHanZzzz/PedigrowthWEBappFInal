@@ -168,21 +168,22 @@ export function useResultViewModel(resultId: string): ResultViewModel {
           return session?.sessionId ?? null;
         })();
 
-      if (!sessionId) {
-        if (active) setVideoUrl(fallbackUrl);
-        return;
-      }
-
       try {
-        const { getVideo } = await import("@/lib/session/videoStore");
-        const videoData = await getVideo(sessionId);
+        const { getPlaybackVideo } = await import("@/lib/session/videoStore");
+        const videoData = await getPlaybackVideo(resolvedResult.id, sessionId);
+        if (!active) return;
         if (!videoData?.blob) {
-          if (active) setVideoUrl(fallbackUrl);
+          setVideoUrl(fallbackUrl);
           return;
         }
 
         objectUrl = URL.createObjectURL(videoData.blob);
-        if (active) setVideoUrl(objectUrl);
+        if (!active) {
+          URL.revokeObjectURL(objectUrl);
+          objectUrl = null;
+          return;
+        }
+        setVideoUrl(objectUrl);
       } catch {
         if (active) setVideoUrl(fallbackUrl);
       }

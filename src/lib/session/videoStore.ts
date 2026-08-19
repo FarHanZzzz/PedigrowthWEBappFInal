@@ -125,6 +125,17 @@ export async function getVideo(sessionId: string): Promise<{ blob: Blob; name: s
   });
 }
 
+export async function getPlaybackVideo(
+  resultId: string,
+  sessionId?: string | null,
+): Promise<{ blob: Blob; name: string; type: string; size: number } | null> {
+  if (sessionId) {
+    const bySession = await getVideo(sessionId);
+    if (bySession) return bySession;
+  }
+  return getVideo(resultId);
+}
+
 /**
  * Delete a video after analysis is complete.
  */

@@ -75,16 +75,16 @@ const PHASE_CONFIG = {
     ageRange: "Birth – 9 weeks corrected",
     description:
       "During the writhing phase, healthy infants make continuous, slow-to-moderate speed movements involving the whole body. The key qualities are fluency, variability, and complexity.",
-    color: "bg-violet-50 border-violet-200 text-violet-800",
-    headerColor: "from-violet-600 to-indigo-600",
+    color: "bg-primary/8 border-primary/20 text-foreground",
+    headerColor: "from-primary to-primary",
   },
   fidgety: {
     label: "Fidgety Movement Phase",
     ageRange: "9 – 20 weeks corrected",
     description:
       "During the fidgety phase, healthy infants make small, continuous, oscillating movements of the neck, trunk, and limbs in all directions. These 'fidgety movements' (FMs) are a critical marker of healthy neurological development.",
-    color: "bg-sky-50 border-sky-200 text-sky-800",
-    headerColor: "from-sky-600 to-cyan-600",
+    color: "bg-accent/40 border-accent text-accent-foreground",
+    headerColor: "from-primary to-primary",
   },
   not_applicable: {
     label: "Not Applicable",

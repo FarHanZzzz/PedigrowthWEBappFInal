@@ -110,6 +110,8 @@ export default function AnnotatedVideoPlayer({
     const canvas = canvasRef.current;
     if (!video || !canvas) return;
 
+    setVideoReady(false);
+
     const resize = () => {
       const dpr = window.devicePixelRatio || 1;
       const cssW = video.clientWidth;
@@ -161,7 +163,7 @@ export default function AnnotatedVideoPlayer({
       ro.disconnect();
       video.removeEventListener("loadedmetadata", onMetadata);
     };
-  }, []);
+  }, [videoUrl]);
 
   // Override renderCurrentFrame to use CSS dimensions instead of canvas backing
   const renderCurrentFrameFixed = useCallback(() => {
@@ -337,6 +339,7 @@ export default function AnnotatedVideoPlayer({
       <div className="relative rounded-lg overflow-hidden bg-black">
         <video
           ref={videoRef}
+          key={videoUrl}
           src={videoUrl}
           className="w-full"
           style={{ objectFit: 'contain' }}

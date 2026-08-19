@@ -50,7 +50,7 @@ type ResultTab = "summary" | "video";
 
 const TABS: { key: ResultTab; label: string; icon: typeof BarChart3 }[] = [
   { key: "summary", label: "Summary", icon: BarChart3 },
-  { key: "video", label: "Hero Video", icon: PlayCircle },
+  { key: "video", label: "Video", icon: PlayCircle },
 ];
 
 const CONCERN_DOMAINS = [
@@ -447,28 +447,30 @@ export default function ResultsPage() {
         return session?.sessionId ?? null;
       })();
 
-    if (!sessionId) {
-      setVideoUrl(fallbackUrl);
-      return;
-    }
+    let cancelled = false;
+    const objectUrlRef = { current: null as string | null };
 
-    let objectUrl: string | null = null;
     import("@/lib/session/videoStore")
-      .then(({ getVideo }) => getVideo(sessionId))
+      .then(({ getPlaybackVideo }) => getPlaybackVideo(result.id, sessionId))
       .then((videoData) => {
+        if (cancelled) return;
         if (!videoData?.blob) {
           setVideoUrl(fallbackUrl);
           return;
         }
-        objectUrl = URL.createObjectURL(videoData.blob);
-        setVideoUrl(objectUrl);
+        objectUrlRef.current = URL.createObjectURL(videoData.blob);
+        setVideoUrl(objectUrlRef.current);
       })
       .catch(() => {
-        setVideoUrl(fallbackUrl);
+        if (!cancelled) setVideoUrl(fallbackUrl);
       });
 
     return () => {
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      cancelled = true;
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = null;
+      }
     };
   }, [result]);
 
@@ -854,99 +856,74 @@ export default function ResultsPage() {
         </div>
       )}
 
-      <div className="mx-auto max-w-6xl space-y-5 px-4 py-6">
-        <div className="text-center space-y-3">
-          <h1 data-display="true" className="text-3xl font-bold">Walking Summary for {nickname}</h1>
-          <p className="mx-auto max-w-2xl text-sm text-muted-foreground">
-            A simple parent-facing summary of what this clip showed, what could not be assessed, and what to do next.
+      <div className="mx-auto max-w-2xl space-y-5 px-1 py-4 sm:px-0">
+        <div className="space-y-3 text-center">
+          <h1 data-display="true" className="medical-title text-2xl font-semibold sm:text-3xl">
+            Walking summary for {nickname}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            What this clip showed, how sure we are, and what to do next.
           </p>
-
-          <div className="print-hidden inline-flex items-center rounded-xl border border-border/60 bg-surface-container-low p-1">
-            <button
-              type="button"
-              className="rounded-lg bg-surface-container-lowest px-3 py-1.5 text-xs font-medium text-foreground shadow-sm"
-              aria-current="page"
-            >
-              Parent View
-            </button>
+          <div className="print-hidden flex items-center justify-center gap-2 text-sm">
+            <span className="rounded-full bg-primary/10 px-3 py-1 font-medium text-primary">Family</span>
             <button
               type="button"
               onClick={() => router.push(`/results/${resultId}/clinician`)}
-              className="rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="rounded-full px-3 py-1 font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
             >
-              Clinician View
+              Clinician packet
             </button>
           </div>
-
-          <p className="text-[11px] text-muted-foreground">
-            Reviewed {new Date(result.analyzedAt).toLocaleString()}
+          <p className="text-xs text-muted-foreground">
+            {new Date(result.analyzedAt).toLocaleString()}
           </p>
         </div>
 
-        <Card className="relative overflow-hidden border border-indigo-100/50 bg-card/70 backdrop-blur-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-500 hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)] hover:bg-card/90 group/card">
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 via-white/20 to-teal-50/30 opacity-70 pointer-events-none" />
-          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-teal-400 via-indigo-400 to-blue-500 opacity-80" />
-          <CardContent className="relative grid gap-8 p-8 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/60">
-            <div className="group transition-transform duration-300 hover:-translate-y-1 sm:pr-6">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="rounded-full bg-teal-100/80 p-1.5 text-teal-700 ring-1 ring-teal-200/50">
-                  <Activity className="h-3.5 w-3.5" />
-                </div>
-                <p className="text-[11px] font-bold uppercase tracking-widest text-teal-800/80">OVERALL OBSERVATION</p>
-              </div>
-              <p className="text-[17px] font-bold leading-snug text-foreground transition-colors group-hover:text-teal-900">
+        <Card className="medical-surface">
+          <CardContent className="space-y-5 p-5 sm:p-6">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">What we noticed</p>
+              <p className="mt-1 text-lg font-semibold leading-snug">
                 {reportBundle?.caregiver.observationsText ??
                   (result.concerns.overallLevel === "none"
-                    ? "No notable gait concern signals were detected in this clip."
-                    : "This clip shows movement patterns worth reviewing more closely.")}
+                    ? "No notable walking differences stood out in this clip."
+                    : "This clip shows movement patterns worth reviewing with a clinician.")}
               </p>
               {reportBundle?.caregiver.contextSignalText && (
-                <p className="mt-3 text-[13px] font-medium text-muted-foreground leading-relaxed bg-card/50 p-2 rounded-lg border border-border/50">
+                <p className="mt-2 text-sm text-muted-foreground">
                   {reportBundle.caregiver.contextSignalText}
                 </p>
               )}
             </div>
-            
-            <div className="group transition-transform duration-300 hover:-translate-y-1 sm:px-6 pt-6 sm:pt-0">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="rounded-full bg-indigo-100/80 p-1.5 text-primary ring-1 ring-indigo-200/50">
-                  <BarChart3 className="h-3.5 w-3.5" />
-                </div>
-                <p className="text-[11px] font-bold uppercase tracking-widest text-indigo-800/80">HOW CERTAIN THIS RUN IS</p>
+            <div className="grid gap-4 border-t border-border/60 pt-4 sm:grid-cols-2">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">How sure this is</p>
+                <p className="mt-1 text-sm leading-relaxed">
+                  {reportBundle?.caregiver.confidenceText ?? result.quality.confidenceNotes}
+                </p>
               </div>
-              <p className="text-[14px] font-medium text-muted-foreground leading-relaxed">
-                {reportBundle?.caregiver.confidenceText ?? result.quality.confidenceNotes}
-              </p>
-            </div>
-
-            <div className="group transition-transform duration-300 hover:-translate-y-1 sm:pl-6 pt-6 sm:pt-0">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="rounded-full bg-blue-100/80 p-1.5 text-blue-700 ring-1 ring-blue-200/50">
-                  <Stethoscope className="h-3.5 w-3.5" />
-                </div>
-                <p className="text-[11px] font-bold uppercase tracking-widest text-blue-800/80">RECOMMENDED NEXT STEP</p>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Suggested next step</p>
+                <Badge variant="outline" className={`mt-1 ${FOLLOWUP_BADGE_STYLES[followupPriority]}`}>
+                  {followupLabel}
+                </Badge>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{followupSummary}</p>
               </div>
-              <Badge variant="outline" className={`mb-3 py-1 px-2.5 text-[10px] uppercase font-bold tracking-widest shadow-sm ${FOLLOWUP_BADGE_STYLES[followupPriority]}`}>
-                {followupLabel}
-              </Badge>
-              <p className="text-[14px] font-medium text-muted-foreground leading-relaxed">
-                {followupSummary}
-              </p>
             </div>
           </CardContent>
         </Card>
 
-        <div className="flex rounded-[1.25rem] bg-card/40 p-1.5 backdrop-blur-xl shadow-inner ring-1 ring-black/5 mx-auto max-w-2xl">
+        <div className="mx-auto flex max-w-md rounded-xl bg-muted/60 p-1">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             return (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-all duration-300 cursor-pointer ${
+                className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium ${
                   activeTab === tab.key
-                    ? "bg-card text-foreground shadow-md ring-1 ring-white"
-                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground"
                 }`}
               >
                 <Icon className={`h-4 w-4 ${activeTab === tab.key ? "opacity-100" : "opacity-70"}`} />
@@ -957,23 +934,16 @@ export default function ResultsPage() {
         </div>
 
         {result.clinicianFeedback && (
-          <div className="relative overflow-hidden rounded-3xl bg-primary-container/80 p-6 shadow-md ring-1 ring-indigo-200/50 backdrop-blur-sm border-l-4 border-l-indigo-500">
-            <div className="absolute top-0 right-0 p-4 opacity-[0.03] pointer-events-none transform translate-x-4 -translate-y-4">
-              <MessageSquare className="h-40 w-40 text-primary-foreground" />
-            </div>
-            <div className="relative z-10 flex gap-5 md:items-center">
-              <div className="mt-1 shrink-0 rounded-full bg-indigo-100 p-3 text-primary ring-1 ring-indigo-200 shadow-sm hidden sm:block">
-                <Stethoscope className="h-6 w-6" />
-              </div>
-              <div className="space-y-1">
-                <p className="text-[11px] font-extrabold uppercase tracking-widest text-primary-foreground/60 mb-2">
-                  New Message From Your Clinical Care Team
-                </p>
-                <p className="text-xl font-medium text-foreground leading-relaxed max-w-3xl">
-                  &quot;{result.clinicianFeedback.note}&quot;
-                </p>
-                <p className="text-xs font-semibold text-primary-foreground/50 mt-3 block">
-                  Sent on {new Date(result.clinicianFeedback.updatedAt).toLocaleString()}
+          <div className="medical-surface border-l-4 border-l-primary p-5">
+            <div className="flex gap-3">
+              <span className="mt-0.5 hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:inline-flex">
+                <Stethoscope className="h-5 w-5" />
+              </span>
+              <div>
+                <p className="text-sm font-medium text-primary">Note from your clinician</p>
+                <p className="mt-2 text-base leading-relaxed">&quot;{result.clinicianFeedback.note}&quot;</p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Sent {new Date(result.clinicianFeedback.updatedAt).toLocaleString()}
                 </p>
               </div>
             </div>
@@ -983,17 +953,12 @@ export default function ResultsPage() {
         {activeTab === "summary" && (
           <div className="space-y-4">
             <div
-              className={`relative overflow-hidden rounded-3xl p-6 shadow-lg shadow-black/5 ring-1 border-0 ${FOLLOWUP_CALLOUT_STYLES[followupPriority]}`}
+              className={`medical-surface p-5 ${FOLLOWUP_CALLOUT_STYLES[followupPriority]}`}
               role={followupPriority === "specialist" ? "alert" : undefined}
             >
-              <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none transform translate-x-4 -translate-y-4">
-                <AlertTriangle className="h-40 w-40" />
-              </div>
-              <div className="relative z-10">
-                <p className="text-[11px] font-extrabold uppercase tracking-widest opacity-80 mb-2">Clinical follow-up priority</p>
-                <p className="text-2xl font-black tracking-tight">{followupLabel}</p>
-                <p className="mt-1 text-sm font-medium opacity-90 max-w-xl">{followupSummary}</p>
-              </div>
+              <p className="text-sm font-medium text-muted-foreground">Suggested next step</p>
+              <p className="mt-1 text-xl font-semibold tracking-tight">{followupLabel}</p>
+              <p className="mt-1 text-sm leading-relaxed">{followupSummary}</p>
             </div>
 
               <PatientSimpleCards
@@ -1014,9 +979,9 @@ export default function ResultsPage() {
                 clinicianQuestions={simpleCardQuestions}
               />
 
-              <details className="rounded-2xl border bg-surface-container-lowest/70 p-3">
-                <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Advanced details for deeper review
+              <details className="medical-surface p-4">
+                <summary className="cursor-pointer text-sm font-medium">
+                  More details
                 </summary>
 
                 <div className="mt-3 space-y-4">
@@ -1236,44 +1201,44 @@ export default function ResultsPage() {
               </div>
             </details>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
               <Button
                 variant="outline"
-                className="flex-1 min-w-[160px] gap-2 py-6 text-sm font-semibold rounded-2xl bg-card/70 backdrop-blur border-border/60 shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:bg-card text-foreground/90 transition-all duration-300"
+                className="h-11 flex-1 rounded-xl"
                 onClick={() => router.push(`/concern?mode=supplemental&resultId=${resultId}`)}
               >
-                <Activity className="h-4 w-4 text-emerald-500" />
+                <Activity className="h-4 w-4" />
                 <span className="truncate">{hasMotorScreenAttached ? "Update motor check" : "Run motor check"}</span>
               </Button>
               <Button
                 variant="outline"
-                className="flex-1 min-w-[160px] gap-2 py-6 text-sm font-semibold rounded-2xl bg-card/70 backdrop-blur border-border/60 shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:bg-card text-foreground/90 transition-all duration-300"
+                className="h-11 flex-1 rounded-xl"
                 onClick={() => router.push(`/results/${resultId}/refine`)}
               >
-                <MessageSquare className="h-4 w-4 text-indigo-500" />
+                <MessageSquare className="h-4 w-4" />
                 Add clinician notes
               </Button>
               <Button
                 variant="outline"
-                className="flex-1 min-w-[160px] gap-2 py-6 text-sm font-semibold rounded-2xl bg-card/70 backdrop-blur border-border/60 shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:bg-card text-foreground/90 transition-all duration-300"
+                className="h-11 flex-1 rounded-xl"
                 onClick={() => router.push(`/results/${resultId}/clinician`)}
               >
-                <Stethoscope className="h-4 w-4 text-blue-500" />
+                <Stethoscope className="h-4 w-4" />
                 Open packet
               </Button>
               {hasTrace && (
                 <Button
                   variant="outline"
-                  className="flex-1 min-w-[160px] gap-2 py-6 text-sm font-semibold rounded-2xl bg-card/70 backdrop-blur border-border/60 shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:bg-card text-foreground/90 transition-all duration-300"
+                  className="h-11 flex-1 rounded-xl"
                   onClick={() => setActiveTab("video")}
                 >
-                  <PlayCircle className="h-4 w-4 text-amber-500" />
+                  <PlayCircle className="h-4 w-4" />
                   View video
                 </Button>
               )}
               <Button
                 variant="outline"
-                className="flex-1 min-w-[160px] gap-2 py-6 text-sm font-semibold rounded-2xl bg-card/70 backdrop-blur border-border/60 shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:bg-card text-foreground/90 transition-all duration-300"
+                className="h-11 flex-1 rounded-xl"
                 onClick={() => {
                   const session = readSession<{
                     nickname?: string;
@@ -1304,15 +1269,15 @@ export default function ResultsPage() {
                 }}
                 id="btn-export-pdf"
               >
-                <Download className="h-4 w-4 text-emerald-500" />
+                <Download className="h-4 w-4" />
                 <span className="truncate">Export PDF</span>
               </Button>
               <Button
                 variant="outline"
-                className="flex-1 min-w-[160px] gap-2 py-6 text-sm font-semibold rounded-2xl bg-card/70 backdrop-blur border-border/60 shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:bg-card text-foreground/90 transition-all duration-300 w-full md:w-auto"
+                className="h-11 flex-1 rounded-xl"
                 onClick={() => router.push("/capture")}
               >
-                <Camera className="h-4 w-4 text-muted-foreground" />
+                <Camera className="h-4 w-4" />
                 Record another clip
               </Button>
             </div>
@@ -1324,18 +1289,18 @@ export default function ResultsPage() {
             <Card className="bg-surface-container-low">
               <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
                 <div>
-                  <p className="text-sm font-semibold">Hero artifact status</p>
+                  <p className="text-sm font-semibold">Video export</p>
                   <p className="text-xs text-muted-foreground">
                     {exportAvailable
-                      ? "An exported annotated hero clip is available."
-                      : "No exported hero clip is present yet. The live player below is the current browser preview."}
+                      ? "An annotated clip export is available."
+                      : "The player below is the live preview from this clip."}
                   </p>
                 </div>
                 {exportAvailable && result.run.exportArtifactPath && (
                   <a href={result.run.exportArtifactPath} download className="inline-flex">
                     <Button variant="secondary" className="gap-2 text-xs">
                       <Download className="h-3.5 w-3.5" />
-                      Download Hero MP4
+                      Download clip
                     </Button>
                   </a>
                 )}
@@ -1344,7 +1309,7 @@ export default function ResultsPage() {
 
             <Card className="bg-surface-container-lowest">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base font-bold">Key Moments In This Clip</CardTitle>
+                <CardTitle className="text-base">Key moments in this clip</CardTitle>
               </CardHeader>
               <CardContent>
                 {assistantIssueHotspots.length > 0 ? (
@@ -1400,7 +1365,7 @@ export default function ResultsPage() {
               <div className="text-center py-12 space-y-3">
                 <PlayCircle className="h-10 w-10 text-muted-foreground/40 mx-auto" />
                 <p className="text-sm text-muted-foreground">
-                  Hero video playback needs a real analysis trace and a retained clip.
+                  Video playback needs a completed analysis and a saved clip.
                 </p>
               </div>
             )}

@@ -65,14 +65,29 @@ export async function fetchResultFromCloud(resultId: string): Promise<Record<str
 
 export async function saveResultToCloud(resultId: string, payload: Record<string, unknown> | unknown): Promise<void> {
   const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  const { error } = await supabase
-    .from("hackathon_results")
-    .upsert({
+  const row: Record<string, unknown> = {
+    id: resultId,
+    payload,
+    updated_at: new Date().toISOString(),
+  };
+  if (user?.id) {
+    row.user_id = user.id;
+  }
+
+  let { error } = await supabase.from("hackathon_results").upsert(row);
+
+  if (error && user?.id) {
+    const retry = await supabase.from("hackathon_results").upsert({
       id: resultId,
       payload,
       updated_at: new Date().toISOString(),
     });
+    error = retry.error;
+  }
 
   if (error) {
     console.error("Error saving to cloud:", error);

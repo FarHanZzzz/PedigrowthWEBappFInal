@@ -12,11 +12,11 @@ import {
   FileClock,
   RefreshCw,
   Stethoscope,
-  UserCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatAgeMonths } from "@/lib/presentation/age";
 import { collectResultIds, readResultRaw, readSession, writeSession } from "@/lib/session/sessionStorage";
 import { fetchRecentResultsFromCloud, type CloudResultRecord } from "@/lib/db/cloudStorage";
 import {
@@ -274,53 +274,28 @@ export default function ParentPortalPage() {
   }), [rows]);
 
   return (
-    <div className="relative min-h-dvh overflow-hidden">
-      <div className="pointer-events-none absolute -right-32 -top-16 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
-
-      {/* Header */}
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between border-b border-border/60 bg-card/80 px-4 py-4 backdrop-blur-sm sm:px-6">
-        <Link href="/" className="inline-flex items-center gap-2">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Stethoscope className="h-4 w-4" />
-          </span>
+    <div className="mx-auto w-full max-w-3xl space-y-6">
+      <section className="medical-surface p-6">
+        <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <span className="block text-sm font-semibold tracking-tight">Pedi-Growth</span>
-            <span className="block text-[10px] text-muted-foreground">Parent Portal</span>
+            <h1 className="medical-title text-3xl font-semibold">Your dashboard</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Start a new walking check or reopen a previous summary.
+            </p>
           </div>
-        </Link>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="gap-1.5 text-[11px]">
-            <UserCircle className="h-3 w-3" />
-            Parent / Caregiver
-          </Badge>
-          <Link href="/">
-            <Button variant="ghost" size="sm" className="text-xs text-muted-foreground">← Switch Portal</Button>
+          <Link href="/start">
+            <Button className="rounded-xl">New check</Button>
           </Link>
         </div>
-      </header>
-
-      <main className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6">
-
-        {/* Welcome banner */}
-        <section className="med-slide-up medical-surface p-6 sm:p-7">
-          <div className="space-y-1">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Parent Dashboard</p>
-              <h1 className="medical-title text-3xl font-semibold text-foreground">Welcome back</h1>
-              <p className="text-sm text-muted-foreground">
-                Start a new gait assessment for your child, or review previous results below.
-              </p>
-            </div>
-          </div>
-        </section>
+      </section>
 
         {/* Stats */}
         <section className="med-slide-up med-stagger-1 grid gap-3 sm:grid-cols-4">
           {[
-            { label: "Total Assessments", value: stats.total, icon: Activity },
-            { label: "Stable", value: stats.stable, icon: CheckCircle2 },
-            { label: "Follow-Up Needed", value: stats.followUp, icon: AlertTriangle },
-            { label: "Retake Suggested", value: stats.retake, icon: RefreshCw },
+            { label: "All checks", value: stats.total, icon: Activity },
+            { label: "On track", value: stats.stable, icon: CheckCircle2 },
+            { label: "Follow-up", value: stats.followUp, icon: AlertTriangle },
+            { label: "Retake", value: stats.retake, icon: RefreshCw },
           ].map((s) => (
             <Card key={s.label} className="bg-card shadow-[0_12px_30px_rgba(14,31,41,0.07)]">
               <CardContent className="flex items-center justify-between p-4">
@@ -426,7 +401,7 @@ export default function ParentPortalPage() {
                   </Badge>
                 </CardTitle>
                 <p className="text-xs text-violet-700/80">
-                  Your child&apos;s age ({infantAgeMonths} months) is within the General Movements Assessment
+                  Your child&apos;s age ({formatAgeMonths(infantAgeMonths)}) is within the General Movements Assessment
                   window. This quick observation checklist helps your clinician identify early motor development
                   patterns. Complete it after watching your baby during a calm, awake period.
                 </p>
@@ -488,7 +463,7 @@ export default function ParentPortalPage() {
                           <td className="px-4 py-3">
                             <p className="font-semibold text-foreground">{row.childName}</p>
                             <p className="text-xs text-muted-foreground">
-                              {row.ageMonths !== null ? `${row.ageMonths} months` : "Age unknown"}
+                              {formatAgeMonths(row.ageMonths)}
                             </p>
                           </td>
                           <td className="px-4 py-3 text-xs text-muted-foreground">
@@ -527,7 +502,6 @@ export default function ParentPortalPage() {
             )}
           </CardContent>
         </Card>
-      </main>
     </div>
   );
 }

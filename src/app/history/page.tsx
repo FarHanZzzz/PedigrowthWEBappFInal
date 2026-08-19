@@ -3,19 +3,16 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Activity,
   AlertTriangle,
   ArrowRight,
   CheckCircle2,
-  ClipboardList,
   FileSearch,
-  Filter,
   RefreshCw,
   Search,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatAgeMonths } from "@/lib/presentation/age";
 import {
   CONCERN_LABELS,
   FOLLOWUP_BADGE_STYLES,
@@ -309,170 +306,99 @@ export default function HistoryPage() {
   }, [allRows]);
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-5">
-      <section className="medical-surface med-slide-up p-6 sm:p-7">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="space-y-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              Clinical Workspace
-            </p>
-            <h1 className="medical-title text-3xl font-semibold text-foreground">Assessment History</h1>
-            <p className="text-sm text-muted-foreground">
-              Parent dashboard (cross-device cloud sync): review previous runs, next steps, and reopen evidence quickly.
-            </p>
-          </div>
+    <div className="mx-auto w-full max-w-3xl space-y-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="medical-title text-2xl font-semibold sm:text-3xl">Past walking checks</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Reopen a summary on this phone or any device where it was saved.
+          </p>
+        </div>
+        <Link href="/start">
+          <Button className="rounded-xl" size="lg">
+            New check
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </Link>
+      </div>
 
+      <div className="grid grid-cols-3 gap-2">
+        {[
+          { label: "All", value: stats.total },
+          { label: "Follow-up", value: stats.followUp },
+          { label: "Retake", value: stats.retake },
+        ].map((item) => (
+          <div key={item.label} className="medical-surface px-3 py-3 text-center">
+            <p className="text-xl font-semibold">{item.value}</p>
+            <p className="text-xs text-muted-foreground">{item.label}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search by name"
+            className="h-11 w-full rounded-xl border border-border bg-card pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value as "all" | HistoryStatus)}
+          className="h-11 rounded-xl border border-border bg-card px-3 text-sm"
+        >
+          <option value="all">All statuses</option>
+          <option value="stable">On track</option>
+          <option value="follow_up">Follow-up</option>
+          <option value="retake">Retake</option>
+        </select>
+      </div>
+
+      {rows.length === 0 ? (
+        <div className="medical-surface flex flex-col items-center gap-3 px-4 py-12 text-center">
+          <FileSearch className="h-8 w-8 text-muted-foreground" />
+          <p className="font-medium">No walking checks yet</p>
+          <p className="max-w-sm text-sm text-muted-foreground">
+            Record the first clip to see it here.
+          </p>
           <Link href="/start">
-            <Button className="cta-gradient gap-2 rounded-xl" size="lg">
-              <ClipboardList className="h-4 w-4" />
-              New Intake
-              <ArrowRight className="h-4 w-4" />
-            </Button>
+            <Button variant="outline" className="rounded-xl">Start a walking check</Button>
           </Link>
         </div>
-      </section>
-
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          { label: "Total Runs", value: stats.total, icon: Activity },
-          { label: "Stable", value: stats.stable, icon: CheckCircle2 },
-          { label: "Follow-Up", value: stats.followUp, icon: AlertTriangle },
-          { label: "Retake", value: stats.retake, icon: RefreshCw },
-        ].map((item) => (
-          <Card key={item.label} className="med-slide-up bg-card shadow-[0_12px_30px_rgba(14,31,41,0.08)]">
-            <CardContent className="flex items-center justify-between p-4">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">{item.label}</p>
-                <p className="text-2xl font-semibold text-foreground">{item.value}</p>
-              </div>
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/12 text-primary">
-                <item.icon className="h-4 w-4" />
-              </span>
-            </CardContent>
-          </Card>
-        ))}
-      </section>
-
-      <Card className="med-slide-up med-stagger-1 overflow-hidden border-border/70">
-        <CardHeader className="border-b border-border/60 bg-card pb-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <CardTitle className="text-lg">Recorded Analyses</CardTitle>
-
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search by child or result ID"
-                  className="h-9 w-full rounded-lg border border-border/70 bg-surface pl-8 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 sm:w-72"
-                />
-              </div>
-
-              <div className="relative">
-                <Filter className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <select
-                  value={statusFilter}
-                  onChange={(event) => setStatusFilter(event.target.value as "all" | HistoryStatus)}
-                  className="h-9 rounded-lg border border-border/70 bg-surface pl-8 pr-7 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                >
-                  <option value="all">All statuses</option>
-                  <option value="stable">Stable</option>
-                  <option value="follow_up">Follow-Up</option>
-                  <option value="retake">Retake</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent className="p-0">
-          {rows.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-3 px-4 py-12 text-center">
-              <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                <FileSearch className="h-5 w-5" />
-              </span>
-              <p className="text-sm font-medium text-foreground">No completed analyses found in this session.</p>
-              <p className="max-w-md text-xs text-muted-foreground">
-                Run a new intake and complete capture to generate a connected result page. Once generated, it will appear here automatically.
-              </p>
-              <Link href="/start">
-                <Button variant="outline" className="gap-2 text-xs">
-                  Start First Analysis
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Button>
+      ) : (
+        <div className="space-y-3">
+          {rows.map((row) => {
+            const meta = statusMeta(row.status);
+            const StatusIcon = meta.icon;
+            return (
+              <Link key={row.id} href={`/results/${row.id}`} className="block">
+                <article className="medical-surface p-4 transition-colors hover:bg-muted/30">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold">{row.childName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {row.ageMonths !== null ? formatAgeMonths(row.ageMonths) : "Age unknown"}
+                        {row.analyzedAt ? ` · ${new Date(row.analyzedAt).toLocaleDateString()}` : ""}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className={`gap-1 ${meta.className}`}>
+                      <StatusIcon className="h-3 w-3" />
+                      {meta.label}
+                    </Badge>
+                  </div>
+                  <p className="mt-2 text-sm">{humanConcern(row.concernLevel)}</p>
+                  {row.reportSummary && (
+                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{row.reportSummary}</p>
+                  )}
+                </article>
               </Link>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full border-collapse text-left text-sm">
-                <thead>
-                  <tr className="border-b border-border/60 bg-surface-container-low text-xs uppercase tracking-wide text-muted-foreground">
-                    <th className="px-4 py-3 font-semibold">Child</th>
-                    <th className="px-4 py-3 font-semibold">Captured</th>
-                    <th className="px-4 py-3 font-semibold">Observation</th>
-                    <th className="px-4 py-3 font-semibold">Next Step</th>
-                    <th className="px-4 py-3 font-semibold">Status</th>
-                    <th className="px-4 py-3 font-semibold">Quality</th>
-                    <th className="px-4 py-3 font-semibold">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row) => {
-                    const meta = statusMeta(row.status);
-                    const StatusIcon = meta.icon;
-
-                    return (
-                      <tr key={row.id} className="border-b border-border/50 bg-card last:border-b-0 hover:bg-surface-container-low/40">
-                        <td className="px-4 py-3 align-top">
-                          <p className="font-semibold text-foreground">{row.childName}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {row.ageMonths !== null ? `${row.ageMonths} months` : "Age unknown"}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground">ID: {row.id}</p>
-                        </td>
-                        <td className="px-4 py-3 align-top text-xs text-muted-foreground">
-                          {row.analyzedAt ? new Date(row.analyzedAt).toLocaleString() : "Timestamp unavailable"}
-                        </td>
-                        <td className="px-4 py-3 align-top">
-                          <p className="text-sm font-semibold text-foreground">{humanConcern(row.concernLevel)}</p>
-                          <p className="mt-1 text-xs text-muted-foreground">{row.routeLabel}</p>
-                          {row.reportSummary && (
-                            <p className="mt-1 text-xs text-foreground/80">{row.reportSummary}</p>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 align-top">
-                          <p className="max-w-xs text-xs text-foreground/80">
-                            {row.nextStep ?? "Open result to generate or review caregiver next-step guidance."}
-                          </p>
-                        </td>
-                        <td className="px-4 py-3 align-top">
-                          <Badge variant="outline" className={`gap-1.5 text-[10px] ${meta.className}`}>
-                            <StatusIcon className="h-3 w-3" />
-                            {meta.label}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3 align-top">
-                          <p className="max-w-sm text-[11px] text-muted-foreground">{row.confidenceNote}</p>
-                          <p className="mt-1 text-[11px] font-medium text-foreground/80">Quality: {row.qualityResult}</p>
-                        </td>
-                        <td className="px-4 py-3 align-top">
-                          <Link href={`/results/${row.id}`}>
-                            <Button size="sm" className="gap-1.5 rounded-lg text-xs">
-                              Open Result
-                              <ArrowRight className="h-3.5 w-3.5" />
-                            </Button>
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

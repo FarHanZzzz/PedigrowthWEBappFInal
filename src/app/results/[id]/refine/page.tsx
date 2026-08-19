@@ -208,11 +208,11 @@ export default function RefinePage() {
   return (
     <div className="px-4 py-6 sm:px-6">
       <div className="mx-auto max-w-3xl">
-        <div className="clinical-layer mb-5 rounded-[1.8rem] px-6 py-7 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-container-lowest">
-            <MessageCircle className="h-6 w-6 text-primary" />
+        <div className="medical-surface mb-5 px-6 py-7 text-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <MessageCircle className="h-6 w-6" />
           </div>
-          <h1 data-display="true" className="text-3xl font-semibold text-foreground">
+          <h1 className="medical-title text-3xl font-semibold text-foreground">
             A few follow-up details
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">

@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Manrope, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -17,7 +16,7 @@ const sourceSerif = Source_Serif_4({
 });
 
 export const metadata: Metadata = {
-  title: "Pedi-Growth — Pediatric Gait Concern Analysis",
+  title: "Pedi-Growth — Walking check for families and clinicians",
   description:
     "A mobile-first platform that helps families and clinicians capture, understand, and communicate gait-related concerns more consistently and earlier. Not a diagnostic tool.",
   robots: "noindex, nofollow", // MVP: private product
@@ -51,12 +50,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="clinical-shell">
-            {children}
-            <div className="fixed bottom-4 right-4 z-50 print-hidden bg-background/50 backdrop-blur-md rounded-full shadow-lg border border-border/50">
-              <ThemeToggle />
-            </div>
-          </div>
+          <div className="clinical-shell">{children}</div>
         </ThemeProvider>
       </body>
     </html>
