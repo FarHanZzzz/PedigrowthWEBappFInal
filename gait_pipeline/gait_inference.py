@@ -134,6 +134,26 @@ def smooth_landmarks(frames, window_length=9, polyorder=3):
     return smoothed_frames
 
 
+def _coerce_sex(value):
+    """Map string sex labels to the numeric encoding used in training (M=1, F=0)."""
+    if isinstance(value, str):
+        v = value.strip().lower()
+        if v in ('m', 'male', '1'):
+            return 1
+        if v in ('f', 'female', '0'):
+            return 0
+        return 0
+    return _coerce_number(value, 0)
+
+
+def _coerce_number(value, default):
+    try:
+        num = float(value)
+        return num if math.isfinite(num) else default
+    except (TypeError, ValueError):
+        return default
+
+
 def extract_features_from_landmarks(frames, patient_info=None):
     """
     Extract the 34 features from a sequence of MediaPipe landmark frames.
@@ -214,11 +234,11 @@ def extract_features_from_landmarks(frames, patient_info=None):
 
     info = patient_info or {}
     feats = {
-        'Sex':    info.get('Sex', 0),
-        'Age':    info.get('Age', 30),
-        'Height': info.get('Height', 165),
-        'Weight': info.get('Weight', 65),
-        'BMI':    info.get('BMI', 22),
+        'Sex':    _coerce_sex(info.get('Sex', 0)),
+        'Age':    _coerce_number(info.get('Age'), 30),
+        'Height': _coerce_number(info.get('Height'), 165),
+        'Weight': _coerce_number(info.get('Weight'), 65),
+        'BMI':    _coerce_number(info.get('BMI'), 22),
     }
 
     feats['l_knee_rom']      = l_rom
@@ -294,7 +314,10 @@ class GaitPredictor:
         Returns:
             dict with risk predictions and confidence scores
         """
-        feature_array = np.array([[features_dict.get(col, 0) for col in FEATURE_COLUMNS]])
+        feature_array = np.array(
+            [[_coerce_number(features_dict.get(col, 0), 0) for col in FEATURE_COLUMNS]],
+            dtype=float,
+        )
 
         results = {}
         flags_active = 0
