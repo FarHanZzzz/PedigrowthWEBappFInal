@@ -1,0 +1,31 @@
+{
+  "_calibrationSource": "Thresholds calibrated against published pediatric gait norms. See normative-references.json for full citations.",
+  "concernThresholds": {
+    "asymmetry": {
+      "mild": 0.15,
+      "moderate": 0.30,
+      "significant": 0.50,
+      "_note": "Composite frontal asymmetry score (0-1). Mild ≈ 1.5 SD above healthy mean hip asymmetry; significant ≈ clear visible pelvic drop + trunk lean."
+    },
+    "irregularRhythm": {
+      "mild": 0.08,
+      "moderate": 0.15,
+      "significant": 0.25,
+      "_note": "Stride CV. Hausdorff 2007: healthy CV ~0.03; children naturally higher. Mild at 0.08 avoids over-flagging normal pediatric variability."
+    },
+    "lateralInstability": {
+      "mild": 0.12,
+      "moderate": 0.25,
+      "significant": 0.45,
+      "_note": "Normalized trunk sway score (0-1). Old threshold (mild=0.08) flagged too aggressively on normal children. Raised to reduce false positives."
+    },
+    "pathDeviation": {
+      "mild": 0.12,
+      "moderate": 0.25,
+      "significant": 0.45,
+      "_note": "Normalized path deviation score (0-1). Children naturally show some path variation. Old threshold (mild=0.10) was too sensitive."
+    }
+  },
+  "stepTimingConcernThreshold": 0.88,
+  "_stepTimingNote": "Symmetry ratio below which step timing contributes to asymmetry concern. Robinson et al. 2006: healthy ~0.97±0.025; old value (0.85) was too lenient and missed genuine asymmetry."
+}

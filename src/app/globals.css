@@ -1,0 +1,301 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  /* Medical UI theme: clean neutrals + clinical teal accents */
+  --background: oklch(0.985 0.006 205);
+  --foreground: oklch(0.23 0.025 220);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.23 0.025 220);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.23 0.025 220);
+  --primary: oklch(0.55 0.11 201);
+  --primary-foreground: oklch(0.98 0.004 205);
+  --secondary: oklch(0.95 0.012 210);
+  --secondary-foreground: oklch(0.32 0.025 220);
+  --muted: oklch(0.95 0.008 215);
+  --muted-foreground: oklch(0.45 0.02 220);
+  --accent: oklch(0.9 0.035 170);
+  --accent-foreground: oklch(0.27 0.045 170);
+  --destructive: oklch(0.55 0.2 25);
+  --destructive-foreground: oklch(0.98 0.004 205);
+  --border: oklch(0.86 0.01 215);
+  --input: oklch(0.9 0.012 215);
+  --ring: oklch(0.56 0.12 201);
+  --radius: 0.95rem;
+
+  /* Additional aliases heavily used in pages/components */
+  --surface: oklch(0.995 0.003 200);
+  --surface-bright: oklch(1 0 0);
+  --surface-dim: oklch(0.965 0.009 215);
+  --surface-container: oklch(0.952 0.009 214);
+  --outline: oklch(0.76 0.015 220);
+
+  --concern-none: oklch(0.71 0.14 154);
+  --concern-mild: oklch(0.79 0.15 92);
+  --concern-moderate: oklch(0.7 0.17 64);
+  --concern-significant: oklch(0.59 0.2 31);
+  --confidence-high: oklch(0.71 0.14 154);
+  --confidence-medium: oklch(0.79 0.15 92);
+  --confidence-low: oklch(0.7 0.17 64);
+  --route-a: oklch(0.58 0.1 205);
+  --route-b: oklch(0.63 0.11 170);
+
+  --primary-container: oklch(0.9 0.04 202);
+  --secondary-container: oklch(0.93 0.015 215);
+  --surface-container-low: oklch(0.972 0.007 214);
+  --surface-container-lowest: oklch(1 0 0);
+  --surface-variant: oklch(0.935 0.013 214);
+  --outline-variant: oklch(0.83 0.014 217);
+  --error-container: oklch(0.93 0.035 25);
+  --on-error-container: oklch(0.35 0.08 25);
+  --tertiary-fixed: oklch(0.9 0.028 286);
+}
+
+.dark {
+  --background: oklch(0.18 0.02 220);
+  --foreground: oklch(0.93 0.01 210);
+  --card: oklch(0.22 0.018 220);
+  --card-foreground: oklch(0.93 0.01 210);
+  --popover: oklch(0.22 0.018 220);
+  --popover-foreground: oklch(0.93 0.01 210);
+  --primary: oklch(0.68 0.1 201);
+  --primary-foreground: oklch(0.2 0.02 220);
+  --secondary: oklch(0.27 0.02 220);
+  --secondary-foreground: oklch(0.93 0.01 210);
+  --muted: oklch(0.27 0.02 220);
+  --muted-foreground: oklch(0.67 0.015 210);
+  --accent: oklch(0.36 0.05 170);
+  --accent-foreground: oklch(0.93 0.01 210);
+  --destructive: oklch(0.55 0.2 25);
+  --destructive-foreground: oklch(0.98 0.005 210);
+  --border: oklch(0.34 0.02 220);
+  --input: oklch(0.34 0.02 220);
+  --ring: oklch(0.68 0.1 201);
+
+  --surface: oklch(0.2 0.018 220);
+  --surface-bright: oklch(0.24 0.018 220);
+  --surface-dim: oklch(0.16 0.02 220);
+  --surface-container: oklch(0.25 0.02 220);
+  --outline: oklch(0.56 0.015 214);
+
+  --primary-container: oklch(0.35 0.05 202);
+  --secondary-container: oklch(0.3 0.022 220);
+  --surface-container-low: oklch(0.23 0.018 220);
+  --surface-container-lowest: oklch(0.2 0.015 220);
+  --surface-variant: oklch(0.29 0.02 220);
+  --outline-variant: oklch(0.39 0.02 220);
+  --error-container: oklch(0.32 0.08 25);
+  --on-error-container: oklch(0.9 0.03 25);
+  --tertiary-fixed: oklch(0.34 0.032 286);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-surface: var(--surface);
+  --color-surface-bright: var(--surface-bright);
+  --color-surface-dim: var(--surface-dim);
+  --color-surface-container: var(--surface-container);
+  --color-outline: var(--outline);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-concern-none: var(--concern-none);
+  --color-concern-mild: var(--concern-mild);
+  --color-concern-moderate: var(--concern-moderate);
+  --color-concern-significant: var(--concern-significant);
+  --color-confidence-high: var(--confidence-high);
+  --color-confidence-medium: var(--confidence-medium);
+  --color-confidence-low: var(--confidence-low);
+  --color-route-a: var(--route-a);
+  --color-route-b: var(--route-b);
+
+  --color-primary-container: var(--primary-container);
+  --color-secondary-container: var(--secondary-container);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-variant: var(--surface-variant);
+  --color-outline-variant: var(--outline-variant);
+  --color-error-container: var(--error-container);
+  --color-on-error-container: var(--on-error-container);
+  --color-tertiary-fixed: var(--tertiary-fixed);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    background-image:
+      radial-gradient(circle at 12% -8%, color-mix(in oklch, var(--primary) 17%, transparent) 0, transparent 40%),
+      radial-gradient(circle at 92% 6%, color-mix(in oklch, var(--accent) 22%, transparent) 0, transparent 34%);
+    font-feature-settings: "rlig" 1, "calt" 1;
+    font-weight: 450;
+  }
+}
+
+@layer utilities {
+  .clinical-shell {
+    @apply relative min-h-dvh overflow-x-clip;
+  }
+
+  .clinical-glass {
+    background: color-mix(in oklch, var(--surface-bright) 82%, var(--background) 18%);
+    backdrop-filter: blur(10px);
+  }
+
+  .medical-surface {
+    @apply rounded-[1.35rem] border border-border/70 bg-card shadow-[0_18px_42px_rgba(16,36,45,0.10)];
+  }
+
+  .medical-title {
+    font-family: var(--font-display), ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+    letter-spacing: -0.015em;
+  }
+
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .cta-gradient {
+    @apply bg-primary text-primary-foreground;
+    background-image: linear-gradient(
+      140deg,
+      color-mix(in oklch, var(--primary) 92%, black 8%) 0%,
+      color-mix(in oklch, var(--accent) 22%, var(--primary) 78%) 100%
+    );
+  }
+
+  .ghost-outline {
+    @apply border border-border/70 bg-transparent;
+  }
+
+  .clinical-card {
+    @apply border border-border/60 bg-card shadow-[0_12px_32px_rgba(21,29,28,0.06)];
+  }
+
+  .clinical-layer {
+    @apply border border-border/55 bg-card/88 shadow-[0_14px_32px_rgba(14,31,41,0.08)];
+  }
+
+  .med-fade-in {
+    animation: med-fade 520ms ease-out both;
+  }
+
+  .med-slide-up {
+    animation: med-slide 520ms ease-out both;
+  }
+
+  .med-stagger-1 {
+    animation-delay: 80ms;
+  }
+
+  .med-stagger-2 {
+    animation-delay: 160ms;
+  }
+
+  .med-stagger-3 {
+    animation-delay: 240ms;
+  }
+
+  .med-stagger-4 {
+    animation-delay: 320ms;
+  }
+}
+
+@keyframes med-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes med-slide {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.clinician-packet .print-only {
+  display: none;
+}
+
+@page {
+  size: A4;
+  margin: 12mm;
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #111827 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  footer {
+    display: none !important;
+  }
+
+  .clinician-packet {
+    min-height: auto !important;
+    background: #ffffff !important;
+  }
+
+  .clinician-packet__content {
+    max-width: 900px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    gap: 0.75rem !important;
+  }
+
+  .clinician-packet .print-hidden {
+    display: none !important;
+  }
+
+  .clinician-packet .print-only {
+    display: block !important;
+  }
+
+  .clinician-packet .print-section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    border-color: #d1d5db !important;
+    box-shadow: none !important;
+  }
+
+  .clinician-packet .text-muted-foreground {
+    color: #4b5563 !important;
+  }
+}

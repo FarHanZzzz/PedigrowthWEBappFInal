@@ -1,0 +1,15 @@
+.git
+.gitignore
+.next
+node_modules
+.venv
+.vscode
+.qwen
+artifacts
+outputs
+dataset
+data
+video
+*.csv
+.env.local
+.env.production

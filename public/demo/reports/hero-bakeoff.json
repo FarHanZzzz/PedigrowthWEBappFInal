@@ -1,0 +1,26 @@
+{
+  "status": "blocked_missing_approved_hero_clip",
+  "generatedAt": "2026-04-07T10:30:00Z",
+  "heroClipId": "toward_good",
+  "selectedBrowserModel": null,
+  "selectedExportModel": null,
+  "candidates": [
+    {
+      "modelId": "mediapipe_full",
+      "status": "pending_real_clip"
+    },
+    {
+      "modelId": "mediapipe_heavy",
+      "status": "pending_real_clip"
+    },
+    {
+      "modelId": "movenet_thunder",
+      "status": "pending_integration"
+    },
+    {
+      "modelId": "rtmpose_m",
+      "status": "pending_integration"
+    }
+  ],
+  "notes": "No approved real toward-camera hero clip exists yet, so a judge-safe bake-off cannot be completed honestly."
+}

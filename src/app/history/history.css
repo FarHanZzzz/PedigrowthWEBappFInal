@@ -1,0 +1,452 @@
+/* ═══════════════════════════════════════════
+   PATIENT HISTORY — Dashboard Layout
+   Turquoise Harmony Palette
+   ═══════════════════════════════════════════ */
+
+.history-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #f4f8f7;
+}
+
+/* ═══ SIDEBAR ═══ */
+.history-sidebar {
+  width: 260px;
+  background: #ffffff;
+  border-right: 1px solid #e0edeb;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .history-sidebar { display: none; }
+  .history-layout { flex-direction: column; }
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.25rem 1.25rem 1rem;
+  border-bottom: 1px solid #e0edeb;
+}
+
+.sidebar-brand__logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  background: #028090;
+  color: #fff;
+}
+
+.sidebar-brand__info {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-brand__name {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0a2e2a;
+}
+
+.sidebar-brand__sub {
+  font-size: 0.6875rem;
+  color: #7fa8a3;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 0.75rem 0;
+}
+
+.sidebar-section {
+  padding: 0 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.sidebar-section__label {
+  display: block;
+  padding: 0.5rem 0.75rem 0.375rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #7fa8a3;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #4b6966;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.sidebar-item:hover {
+  background: #e8f5f2;
+  color: #028090;
+}
+
+.sidebar-item--active {
+  background: #028090;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.sidebar-item--active:hover {
+  background: #027080;
+  color: #ffffff;
+}
+
+/* ═══ MAIN CONTENT ═══ */
+.history-main {
+  flex: 1;
+  padding: 1.5rem 2rem;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .history-main { padding: 1rem; }
+}
+
+/* Top bar */
+.history-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.history-topbar__title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: #0a2e2a;
+}
+
+.history-topbar__search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #ffffff;
+  border: 1px solid #d0e0dd;
+  border-radius: 0.625rem;
+  min-width: 240px;
+  color: #7fa8a3;
+}
+
+.history-topbar__search input {
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.8125rem;
+  color: #0a2e2a;
+  width: 100%;
+}
+
+.history-topbar__search input::placeholder {
+  color: #a0c4bf;
+}
+
+/* ═══ STATS CARDS ═══ */
+.history-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .history-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 500px) {
+  .history-stats { grid-template-columns: 1fr; }
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: 0.875rem;
+  background: #ffffff;
+  border: 1px solid #e0edeb;
+  transition: box-shadow 0.2s;
+}
+
+.stat-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.stat-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+}
+
+.stat-card--total .stat-card__icon { background: #d4f0ed; color: #028090; }
+.stat-card--pending .stat-card__icon { background: #fef3cd; color: #d97706; }
+.stat-card--completed .stat-card__icon { background: #d1fae5; color: #02C39A; }
+.stat-card--flagged .stat-card__icon { background: #fce8e8; color: #dc2626; }
+
+.stat-card__info {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-card__label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: #7fa8a3;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.stat-card__value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0a2e2a;
+}
+
+/* ═══ TABLE CARD ═══ */
+.history-table-card {
+  background: #ffffff;
+  border: 1px solid #e0edeb;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.history-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e0edeb;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.history-table-header__title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #0a2e2a;
+}
+
+.history-table-header__filters {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.filter-select {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  color: #4b6966;
+}
+
+.filter-select select {
+  padding: 0.375rem 0.625rem;
+  border: 1px solid #d0e0dd;
+  border-radius: 0.375rem;
+  background: #ffffff;
+  font-size: 0.75rem;
+  color: #0a2e2a;
+  outline: none;
+  cursor: pointer;
+}
+
+.filter-select select:focus {
+  border-color: #028090;
+}
+
+/* Table */
+.history-table-wrapper {
+  overflow-x: auto;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.history-table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #7fa8a3;
+  background: #f4f8f7;
+  border-bottom: 1px solid #e0edeb;
+  white-space: nowrap;
+}
+
+.history-table td {
+  padding: 0.75rem 1rem;
+  color: #0a2e2a;
+  border-bottom: 1px solid #f0f5f4;
+  white-space: nowrap;
+}
+
+.history-table tbody tr {
+  transition: background 0.15s;
+}
+
+.history-table tbody tr:hover {
+  background: #f4faf9;
+}
+
+.patient-name {
+  font-weight: 600;
+}
+
+/* Gait score */
+.gait-score {
+  font-weight: 700;
+  font-size: 0.8125rem;
+}
+
+.gait-score--good { color: #02C39A; }
+.gait-score--moderate { color: #d97706; }
+.gait-score--na { color: #a0c4bf; }
+
+/* Status badges */
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.status-badge--completed { background: #d1fae5; color: #047857; }
+.status-badge--pending { background: #fef3cd; color: #92400e; }
+.status-badge--flagged { background: #fce8e8; color: #b91c1c; }
+
+/* Action buttons */
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.action-btn {
+  border: none;
+  cursor: pointer;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  border-radius: 0.375rem;
+  transition: all 0.15s;
+}
+
+.action-btn--view {
+  padding: 0.3rem 0.75rem;
+  background: #e8f5f2;
+  color: #028090;
+}
+
+.action-btn--view:hover {
+  background: #028090;
+  color: #ffffff;
+}
+
+.action-btn--more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  background: transparent;
+  color: #7fa8a3;
+}
+
+.action-btn--more:hover {
+  background: #e8f5f2;
+  color: #028090;
+}
+
+/* ═══ PAGINATION ═══ */
+.history-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 1.25rem;
+  border-top: 1px solid #e0edeb;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.history-pagination__info {
+  font-size: 0.75rem;
+  color: #7fa8a3;
+}
+
+.history-pagination__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.page-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.375rem;
+  border: 1px solid #d0e0dd;
+  border-radius: 0.375rem;
+  background: #ffffff;
+  color: #4b6966;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: #e8f5f2;
+  border-color: #028090;
+  color: #028090;
+}
+
+.page-btn--active {
+  background: #028090;
+  border-color: #028090;
+  color: #ffffff;
+}
+
+.page-btn--active:hover {
+  background: #027080;
+  border-color: #027080;
+  color: #ffffff;
+}
+
+.page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

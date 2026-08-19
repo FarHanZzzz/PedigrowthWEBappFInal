@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: pedi-growth-backend
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements-pipeline.txt
+    startCommand: uvicorn gait_pipeline.api:build_app --factory --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+      - key: CORS_ALLOW_ORIGINS
+        sync: false

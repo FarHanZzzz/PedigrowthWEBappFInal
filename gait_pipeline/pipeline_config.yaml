@@ -1,0 +1,44 @@
+paths:
+  manifest: data/manifest.csv
+  output_dir: outputs/hsil_demo
+  failure_log: outputs/hsil_demo/failures.jsonl
+
+cleaning:
+  min_confidence: 0.6
+  max_gap_frames: 5
+  smoothing_window: 11
+  mad_threshold: 3.0
+  height_reference_cm: 130
+
+features:
+  scalar_metrics:
+    - step_length
+    - stride_time
+    - cadence
+    - knee_rom
+    - ankle_dorsiflexion_peak
+    - symmetry_index
+    - jerk_metric
+  tag_experimental:
+    - jerk_metric
+
+split:
+  test_size: 0.15
+  val_size: 0.15
+  stratify_keys: [condition, severity, age_group]
+
+model:
+  type: random_forest
+  class_weight: balanced
+  use_smote: false
+
+target_joint_set: coco17
+quality_threshold: 0.7
+normalized_cycle_points: 100
+heel_strike_min_distance_seconds: 0.35
+savgol_polyorder: 3
+random_state: 42
+physiological_bounds:
+  knee_flexion_deg: [0.0, 140.0]
+  hip_flexion_deg: [-30.0, 130.0]
+  ankle_dorsi_deg: [-50.0, 50.0]

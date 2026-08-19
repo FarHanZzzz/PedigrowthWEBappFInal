@@ -1,0 +1,8 @@
+{
+  "status": "blocked_missing_approved_hero_clip",
+  "generatedAt": "2026-04-07T10:30:00Z",
+  "heroClipId": "toward_good",
+  "offlineBrowserAgreement": null,
+  "maxDisplayedFrameDrift": null,
+  "notes": "Geometry/sync verification is wired for the hero path but cannot be completed until a real approved hero clip and trace are available."
+}

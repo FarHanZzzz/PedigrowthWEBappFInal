@@ -1,0 +1,6 @@
+trial_path,trial_format,source_joint_set,subject_id,age_months,condition,severity,sampling_rate,height_cm,weight_kg,video_path
+outputs/synthetic_demo/trials/S000_T1.csv,csv,coco17,CP001,84,CP,2,30,128,28,
+outputs/synthetic_demo/trials/S002_T1.csv,csv,coco17,CP002,96,CP,1,30,132,30,
+outputs/synthetic_demo/trials/S001_T1.csv,csv,coco17,TD001,90,TD,0,30,135,32,
+outputs/synthetic_demo/trials/S003_T1.csv,csv,coco17,TD002,102,TD,0,30,140,35,
+dataset/mobile-gaitlab/demo/out/keypoints,json,openpose25,TD003,78,TD,0,30,130,29,

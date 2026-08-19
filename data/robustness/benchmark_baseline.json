@@ -1,0 +1,61 @@
+{
+  "generated_at": "2026-04-08T15:56:48.321081+00:00",
+  "quick_mode": true,
+  "subjects": 8,
+  "scenario_count": 3,
+  "output_dir": "outputs/robustness_benchmark_quick",
+  "metrics_csv": "outputs/robustness_benchmark_quick/benchmark_metrics.csv",
+  "aggregate": {
+    "mean_detection_rate": 0.9166666666666666,
+    "mean_stability_score": 0.4789754325619788,
+    "mean_suppression_ratio": 0.08333333333333333,
+    "mean_clinician_agreement_proxy": 0.23043915462381356
+  },
+  "scenarios": [
+    {
+      "name": "stable_frontal",
+      "manifest_path": "outputs/robustness_benchmark_quick/stable_frontal/manifest.csv",
+      "output_dir": "outputs/robustness_benchmark_quick/stable_frontal/artifacts",
+      "status": "ok",
+      "error": null,
+      "metrics": {
+        "total_trials": 16.0,
+        "kept_trials": 16.0,
+        "detection_rate": 1.0,
+        "suppression_ratio": 0.0,
+        "stability_score": 0.5688992796719199,
+        "clinician_agreement_proxy": 0.18182788041576547
+      }
+    },
+    {
+      "name": "low_light",
+      "manifest_path": "outputs/robustness_benchmark_quick/low_light/manifest.csv",
+      "output_dir": "outputs/robustness_benchmark_quick/low_light/artifacts",
+      "status": "ok",
+      "error": null,
+      "metrics": {
+        "total_trials": 16.0,
+        "kept_trials": 16.0,
+        "detection_rate": 1.0,
+        "suppression_ratio": 0.0,
+        "stability_score": 0.46754476021165703,
+        "clinician_agreement_proxy": 0.2818406924180518
+      }
+    },
+    {
+      "name": "occlusion",
+      "manifest_path": "outputs/robustness_benchmark_quick/occlusion/manifest.csv",
+      "output_dir": "outputs/robustness_benchmark_quick/occlusion/artifacts",
+      "status": "ok",
+      "error": null,
+      "metrics": {
+        "total_trials": 16.0,
+        "kept_trials": 12.0,
+        "detection_rate": 0.75,
+        "suppression_ratio": 0.25,
+        "stability_score": 0.4004822578023594,
+        "clinician_agreement_proxy": 0.22764889103762334
+      }
+    }
+  ]
+}

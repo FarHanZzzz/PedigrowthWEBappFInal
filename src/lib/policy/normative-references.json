@@ -1,0 +1,116 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "purpose": "Clinical reference data for threshold calibration. Every normalization constant and concern threshold must trace back to an entry here.",
+    "lastReviewed": "2026-04-09"
+  },
+
+  "cadence": {
+    "unit": "steps/min",
+    "source": "Dusing & Thorpe 2007; Sutherland 1988 — Pediatric gait development norms",
+    "normativeRange": {
+      "age3to5": { "mean": 154, "sd": 16, "range": [120, 190] },
+      "age6to9": { "mean": 140, "sd": 14, "range": [110, 170] },
+      "age10to14": { "mean": 126, "sd": 12, "range": [100, 155] },
+      "adult": { "mean": 113, "sd": 10, "range": [90, 140] }
+    },
+    "physiologicalBounds": { "min": 40, "max": 220 },
+    "note": "Cadence counts left+right foot strikes per minute. Values outside physiological bounds indicate measurement error, not pathology."
+  },
+
+  "stepTimingSymmetry": {
+    "unit": "ratio (0-1, 1 = perfect symmetry)",
+    "source": "Robinson et al. 2006; Patterson et al. 2010 — gait symmetry indices",
+    "normativeRange": {
+      "healthy": { "mean": 0.97, "sd": 0.025 },
+      "mildAsymmetry": { "below": 0.92 },
+      "moderateAsymmetry": { "below": 0.85 },
+      "severeAsymmetry": { "below": 0.75 }
+    },
+    "note": "Symmetry ratio = min(left, right) / max(left, right) of step durations."
+  },
+
+  "frontalAsymmetry": {
+    "unit": "composite score (0-1)",
+    "source": "Wren et al. 2005 — frontal-plane gait analysis; Baker 2006 — pelvic obliquity norms",
+    "components": {
+      "hipHeightDifference": {
+        "description": "Absolute Y-difference between left and right hip in MediaPipe normalized coords",
+        "normativeSD": 0.008,
+        "note": "In MediaPipe coords (0-1 screen), typical pelvic obliquity during normal gait causes ~0.005-0.010 Y-difference. Values >0.025 suggest clinically relevant pelvic drop.",
+        "normalizationDivisor": 0.035,
+        "divisorJustification": "Set so that 2 SD above pathological mean (0.025 + 2*0.005 = 0.035) maps to score = 1.0"
+      },
+      "shoulderTilt": {
+        "description": "Absolute Y-difference between left and right shoulder in MediaPipe normalized coords",
+        "normativeSD": 0.012,
+        "note": "Shoulders show more natural variation than hips. Clinically significant trunk lean involves >0.04 in normalized coords.",
+        "normalizationDivisor": 0.06,
+        "divisorJustification": "Set so that moderate pathological shoulder tilt (0.06) maps to score = 1.0"
+      }
+    },
+    "compositeWeights": { "hip": 0.6, "shoulder": 0.4 },
+    "note": "Composite of hip height asymmetry (pelvic drop proxy) and shoulder tilt (trunk lean proxy). Both are frontal-plane valid."
+  },
+
+  "strideRegularity": {
+    "unit": "coefficient of variation (CV)",
+    "source": "Hausdorff 2007 — stride-to-stride variability; Gabell & Nayak 1984",
+    "normativeRange": {
+      "healthy": { "mean": 0.03, "sd": 0.015 },
+      "mildIrregularity": { "above": 0.06 },
+      "moderateIrregularity": { "above": 0.10 },
+      "severeIrregularity": { "above": 0.18 }
+    },
+    "physiologicalBounds": { "min": 0.0, "max": 1.0 },
+    "note": "CV of step intervals. Healthy adults ~2-4%, neurological populations often >5%. Children naturally show higher variability."
+  },
+
+  "lateralTrunkSway": {
+    "unit": "normalized score (0-1)",
+    "source": "Menz et al. 2003 — trunk sway during gait; Goutier et al. 2010",
+    "normativeSD": {
+      "mediolateralOffset": 0.006,
+      "note": "SD of lateral shoulder-hip offset in normalized MediaPipe coords during normal gait is ~0.004-0.008"
+    },
+    "normalizationDivisor": 0.025,
+    "divisorJustification": "Set so that clinically obvious lateral instability (~0.025 SD) maps to score = 1.0. Previous value (0.04) was too generous — children with moderate sway were scoring too low.",
+    "note": "Measures mediolateral trunk stability. In frontal view, this is one of the most reliable metrics."
+  },
+
+  "pathDeviation": {
+    "unit": "normalized score (0-1)",
+    "source": "Hausdorff 2005 — locomotor pathway consistency",
+    "normativeResidualsSD": {
+      "healthy": 0.005,
+      "note": "Residual SD from linear regression of hip-center X over time in MediaPipe normalized coords. Healthy walkers typically <0.008"
+    },
+    "normalizationDivisor": 0.035,
+    "divisorJustification": "Set so that 3.5% of screen width deviation from a straight path maps to 1.0. Previous value (0.05) was too generous.",
+    "note": "Tracks how straight the walking path is. Ideal for frontal/away video."
+  },
+
+  "kneeROM": {
+    "unit": "degrees",
+    "source": "Perry & Burnfield 2010 — Gait Analysis: Normal and Pathological Function",
+    "normativeRange": {
+      "stancePeakFlexion": { "mean": 18, "sd": 5, "range": [5, 30] },
+      "swingPeakFlexion": { "mean": 60, "sd": 7, "range": [45, 75] },
+      "totalROM": { "mean": 65, "sd": 8, "range": [45, 80] }
+    },
+    "note": "Used by the backend XGBoost pipeline, not the client-side frontal analysis."
+  },
+
+  "minimumEvidenceRequirements": {
+    "minUsableDurationSeconds": 2.5,
+    "minFramesForMetric": 15,
+    "minStrikesForCadence": 4,
+    "minIntervalsForRegularity": 3,
+    "confidenceCeilingForShortClips": {
+      "under3sec": 0.5,
+      "under5sec": 0.7,
+      "over5sec": 0.9
+    },
+    "note": "Minimum evidence required before reporting a metric with meaningful confidence. Below these thresholds, the metric should be marked as limited."
+  }
+}

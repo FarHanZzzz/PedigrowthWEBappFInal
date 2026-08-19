@@ -1,0 +1,96 @@
+{
+  "baseUrl": "http://localhost:3000",
+  "resultId": "toggle-audit-001",
+  "screenshots": [
+    "artifacts/toggle-audit/01-parent-toggle-visible.png",
+    "artifacts/toggle-audit/02-clinician-toggle-visible.png",
+    "artifacts/toggle-audit/04-clinician-active-state.png",
+    "artifacts/toggle-audit/03-parent-active-state.png"
+  ],
+  "checks": {
+    "navigation_parent_to_clinician": true,
+    "navigation_clinician_to_parent": true,
+    "result_id_preserved_parent_to_clinician": true,
+    "result_id_preserved_clinician_to_parent": true,
+    "no_broken_route_parent": true,
+    "no_broken_route_clinician": true,
+    "no_overlap_parent_toggle_heading": true,
+    "no_overlap_parent_toggle_meta": true,
+    "no_overlap_clinician_toggle_heading": true,
+    "parent_content_intact_movement_observations": true,
+    "parent_content_intact_detailed_metrics": true,
+    "parent_content_intact_tabs": true,
+    "no_duplicate_toggle_parent": true,
+    "no_duplicate_toggle_clinician": true,
+    "parent_active_state_clear": true,
+    "clinician_active_state_clear": true
+  },
+  "parentState": {
+    "parentClass": "rounded-lg bg-surface-container-lowest px-3 py-1.5 text-xs font-medium text-foreground shadow-sm",
+    "clinicianClass": "rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground",
+    "parentRect": {
+      "x": 619,
+      "y": 251.5,
+      "width": 96,
+      "height": 28,
+      "top": 251.5,
+      "right": 715,
+      "bottom": 279.5,
+      "left": 619
+    },
+    "headingRect": {
+      "x": 224,
+      "y": 146.5,
+      "width": 992,
+      "height": 36,
+      "top": 146.5,
+      "right": 1216,
+      "bottom": 182.5,
+      "left": 224
+    },
+    "metaRect": {
+      "x": 481.5,
+      "y": 296.5,
+      "width": 137,
+      "height": 16.5,
+      "top": 296.5,
+      "right": 618.5,
+      "bottom": 313,
+      "left": 481.5
+    },
+    "togglePairCount": 2,
+    "movementObs": true,
+    "detailedMetrics": true,
+    "summaryTab": true,
+    "clinicianTab": true,
+    "url": "http://localhost:3000/results/toggle-audit-001"
+  },
+  "clinicianState": {
+    "parentClass": "rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground",
+    "clinicianClass": "rounded-lg bg-surface-container-lowest px-3 py-1.5 text-xs font-medium text-foreground shadow-sm",
+    "parentRect": {
+      "x": 229,
+      "y": 115.5,
+      "width": 96,
+      "height": 28,
+      "top": 115.5,
+      "right": 325,
+      "bottom": 143.5,
+      "left": 229
+    },
+    "headingRect": {
+      "x": 224,
+      "y": 156.5,
+      "width": 992,
+      "height": 32,
+      "top": 156.5,
+      "right": 1216,
+      "bottom": 188.5,
+      "left": 224
+    },
+    "togglePairCount": 2,
+    "section1": true,
+    "url": "http://localhost:3000/results/toggle-audit-001/clinician"
+  },
+  "finalUrl": "http://localhost:3000/results/toggle-audit-001"
+}

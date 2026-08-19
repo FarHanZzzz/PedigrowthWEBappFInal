@@ -1,0 +1,17 @@
+{
+  "default": {
+    "max_detection_rate_drop": 0.08,
+    "max_stability_score_drop": 0.1,
+    "max_agreement_proxy_drop": 0.1,
+    "max_suppression_ratio_increase": 0.08
+  },
+  "status_policy": {
+    "require_ok": true,
+    "allow_failed_scenarios": []
+  },
+  "coverage_policy": {
+    "require_all_current_scenarios": true,
+    "allow_missing_baseline_scenarios": []
+  },
+  "scenarios": {}
+}

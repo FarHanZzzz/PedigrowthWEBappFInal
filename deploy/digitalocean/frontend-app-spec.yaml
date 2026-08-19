@@ -1,0 +1,52 @@
+name: pedi-growth-frontend
+region: nyc
+services:
+  - name: frontend
+    github:
+      repo: armageden/Pedi-Growth
+      branch: main
+      deploy_on_push: true
+    source_dir: /
+    environment_slug: node-js
+    build_command: npm ci && npm run build
+    run_command: npm run start -- -H 0.0.0.0 -p 3000
+    http_port: 3000
+    instance_count: 1
+    instance_size_slug: apps-s-1vcpu-1gb
+    envs:
+      - key: GAIT_PIPELINE_API_URL
+        value: https://replace-with-backend-domain.ondigitalocean.app
+        type: GENERAL
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        value: replace-with-supabase-url
+        type: GENERAL
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        value: replace-with-supabase-anon-key
+        type: SECRET
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        value: replace-with-supabase-service-role-key
+        type: SECRET
+      - key: NEXT_PUBLIC_APP_VERSION
+        value: "0.1.0"
+        type: GENERAL
+      - key: NEXT_PUBLIC_POLICY_VERSION
+        value: "0.1.0"
+        type: GENERAL
+      - key: NEXT_PUBLIC_VALIDATION_MODE
+        value: "false"
+        type: GENERAL
+      - key: NEXT_PUBLIC_ENABLE_VIDEO_RETENTION
+        value: "false"
+        type: GENERAL
+      - key: NEXT_PUBLIC_ENABLE_AI_NAVIGATOR
+        value: "true"
+        type: GENERAL
+      - key: NEXT_PUBLIC_DEMO_MODE
+        value: "false"
+        type: GENERAL
+      - key: DASHSCOPE_MODEL
+        value: qwen3.6-plus
+        type: GENERAL
+      - key: DASHSCOPE_REGION
+        value: ap-southeast-1
+        type: GENERAL

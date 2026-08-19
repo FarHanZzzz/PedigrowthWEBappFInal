@@ -1,0 +1,110 @@
+{
+  "schemaVersion": "hero-demo-lock.v1",
+  "generatedAt": "2026-04-07T10:30:00Z",
+  "heroClipId": "toward_good",
+  "videos": [
+    {
+      "clipId": "toward_good",
+      "filename": "toward_good.mp4",
+      "sourcePath": null,
+      "approvedForDemo": false,
+      "viewType": "frontal",
+      "direction": "toward",
+      "expectedQualityTier": "pass",
+      "expectedAssessmentMode": "full_assessment",
+      "knownLimitations": [],
+      "lastValidatedAt": null,
+      "notes": "Missing real approved hero clip. Demo lock remains blocked until a real toward-camera frontal clip is added and validated."
+    },
+    {
+      "clipId": "toward_borderline",
+      "filename": "toward_borderline.mp4",
+      "sourcePath": null,
+      "approvedForDemo": false,
+      "viewType": "frontal",
+      "direction": "toward",
+      "expectedQualityTier": "borderline",
+      "expectedAssessmentMode": "best_effort",
+      "knownLimitations": [
+        "Body may be partially visible",
+        "Step count may be short"
+      ],
+      "lastValidatedAt": null,
+      "notes": "Optional support clip. Not required for hero demo lock."
+    },
+    {
+      "clipId": "away_good",
+      "filename": "away_good.mp4",
+      "sourcePath": null,
+      "approvedForDemo": false,
+      "viewType": "frontal",
+      "direction": "away",
+      "expectedQualityTier": "pass",
+      "expectedAssessmentMode": "best_effort",
+      "knownLimitations": [
+        "Tracking confidence may drop as the subject shrinks in frame"
+      ],
+      "lastValidatedAt": null,
+      "notes": "Deferred until after hero demo lock."
+    },
+    {
+      "clipId": "away_borderline",
+      "filename": "away_borderline.mp4",
+      "sourcePath": null,
+      "approvedForDemo": false,
+      "viewType": "frontal",
+      "direction": "away",
+      "expectedQualityTier": "borderline",
+      "expectedAssessmentMode": "best_effort",
+      "knownLimitations": [
+        "Subject may be small in frame",
+        "Away-view confidence is lower than the toward hero mode"
+      ],
+      "lastValidatedAt": null,
+      "notes": "Deferred until after hero demo lock."
+    },
+    {
+      "clipId": "cannot_assess",
+      "filename": "cannot_assess.mp4",
+      "sourcePath": null,
+      "approvedForDemo": false,
+      "viewType": "frontal",
+      "direction": "unknown",
+      "expectedQualityTier": "fail",
+      "expectedAssessmentMode": "cannot_assess",
+      "knownLimitations": [
+        "Insufficient quality",
+        "Expected to produce explicit cannot-assess guidance"
+      ],
+      "lastValidatedAt": null,
+      "notes": "Optional failure-case support clip. Not needed for the main judge demo."
+    }
+  ],
+  "unapprovedAssets": [
+    {
+      "filename": "Gait_Analysis_Video_Generation.mp4",
+      "approvedForDemo": false,
+      "notes": "AI-generated development asset. Not approved for validation or judge demo."
+    },
+    {
+      "filename": "Generating_Gait_Analysis_Video_for_Child.mp4",
+      "approvedForDemo": false,
+      "notes": "AI-generated development asset. Not approved for validation or judge demo."
+    },
+    {
+      "filename": "Generating_Medical_Research_Video.mp4",
+      "approvedForDemo": false,
+      "notes": "AI-generated development asset. Not approved for validation or judge demo."
+    },
+    {
+      "filename": "Generating_Neuromuscular_Disease_Video.mp4",
+      "approvedForDemo": false,
+      "notes": "AI-generated development asset. Not approved for validation or judge demo."
+    },
+    {
+      "filename": "Perfect_Gait_Analysis_Video_Generation.mp4",
+      "approvedForDemo": false,
+      "notes": "AI-generated development asset. Not approved for validation or judge demo."
+    }
+  ]
+}
