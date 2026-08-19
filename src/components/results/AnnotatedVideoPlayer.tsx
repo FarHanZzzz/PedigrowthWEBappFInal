@@ -1,6 +1,6 @@
 "use client";
 
-// GAITBRIDGE — Annotated Video Player (v2 — Annotation Quality Recovery)
+// Pedi-Growth — Annotated Video Player
 //
 // Video + Canvas overlay, synchronized via requestAnimationFrame.
 //

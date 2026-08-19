@@ -10,6 +10,7 @@ import {
   FileSearch,
   FileText,
   RefreshCw,
+  Search,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,11 +22,9 @@ import { fetchRecentResultsFromCloud, type CloudResultRecord } from "@/lib/db/cl
 import {
   CONCERN_LABELS,
   FOLLOWUP_BADGE_STYLES,
-  FOLLOWUP_SHORT_LABELS,
   CONCERN_BADGE_STYLES,
   RUN_TONE_BADGE_STYLES,
   toConcernLevel,
-  toFollowupPriority,
 } from "@/lib/presentation/severity";
 
 interface ParsedResult {
@@ -149,6 +148,8 @@ function statusBadgeProps(status: RowStatus) {
 export default function ClinicianPortalPage() {
   const [localPatients, setLocalPatients] = useState<PatientRow[]>([]);
   const [cloudPatients, setCloudPatients] = useState<PatientRow[]>([]);
+  const [query, setQuery] = useState("");
+  const [noteFilter, setNoteFilter] = useState<"all" | "needs_note" | "reviewed">("all");
 
   useEffect(() => {
     let active = true;
@@ -221,10 +222,25 @@ export default function ClinicianPortalPage() {
 
   const stats = useMemo(() => ({
     total: patients.length,
-    stable: patients.filter(p => p.status === "stable").length,
-    followUp: patients.filter(p => p.status === "follow_up").length,
-    retake: patients.filter(p => p.status === "retake").length,
+    needsNote: patients.filter((p) => !p.hasPublishedFeedback).length,
+    reviewed: patients.filter((p) => p.hasPublishedFeedback).length,
+    followUp: patients.filter((p) => p.status === "follow_up").length,
   }), [patients]);
+
+  const visiblePatients = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return patients.filter((patient) => {
+      const matchesQuery =
+        needle.length === 0 ||
+        patient.childName.toLowerCase().includes(needle) ||
+        patient.id.toLowerCase().includes(needle);
+      const matchesNote =
+        noteFilter === "all" ||
+        (noteFilter === "needs_note" && !patient.hasPublishedFeedback) ||
+        (noteFilter === "reviewed" && patient.hasPublishedFeedback);
+      return matchesQuery && matchesNote;
+    });
+  }, [patients, query, noteFilter]);
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
@@ -254,9 +270,9 @@ export default function ClinicianPortalPage() {
         <section className="med-slide-up med-stagger-1 grid gap-3 sm:grid-cols-4">
           {[
             { label: "Walking checks", value: stats.total, icon: Users },
-            { label: "On track", value: stats.stable, icon: CheckCircle2 },
+            { label: "Needs note", value: stats.needsNote, icon: FileText },
+            { label: "Reviewed", value: stats.reviewed, icon: CheckCircle2 },
             { label: "Follow-up", value: stats.followUp, icon: Activity },
-            { label: "Retake needed", value: stats.retake, icon: RefreshCw },
           ].map((s) => (
             <Card key={s.label} className="bg-card shadow-[0_12px_30px_rgba(14,31,41,0.07)]">
               <CardContent className="flex items-center justify-between p-4">
@@ -276,27 +292,56 @@ export default function ClinicianPortalPage() {
 
         {/* Patient Table */}
         <Card className="med-slide-up med-stagger-2 overflow-hidden border-border/70">
-          <CardHeader className="border-b border-border/60 bg-card pb-4">
-            <CardTitle className="text-lg">Walking checks</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Open a packet to review evidence and send a note the family can see.
-            </p>
+          <CardHeader className="border-b border-border/60 bg-card pb-4 space-y-3">
+            <div>
+              <CardTitle className="text-lg">Caseload</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Search a child, then open the packet. Needs note means no clinician note has been published yet.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search by child name"
+                  className="h-11 w-full rounded-xl border border-border bg-background pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+              <select
+                value={noteFilter}
+                onChange={(event) => setNoteFilter(event.target.value as "all" | "needs_note" | "reviewed")}
+                className="h-11 rounded-xl border border-border bg-background px-3 text-sm"
+              >
+                <option value="all">All notes</option>
+                <option value="needs_note">Needs note</option>
+                <option value="reviewed">Reviewed</option>
+              </select>
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             {patients.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 px-4 py-14 text-center">
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                  <FileSearch className="h-5 w-5" />
+              <div className="flex flex-col items-center justify-center gap-4 px-4 py-14 text-center">
+                <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <FileSearch className="h-7 w-7" />
                 </span>
-                <p className="text-sm font-medium text-foreground">No walking checks yet</p>
-                <p className="max-w-md text-sm text-muted-foreground">
-                  When a family completes a check, it appears here. You can also start one now.
-                </p>
+                <div className="space-y-1">
+                  <p className="text-base font-semibold">No walking checks yet</p>
+                  <p className="max-w-md text-sm text-muted-foreground">
+                    Record the first 10-second clip. The child will appear here with a name, date, and note status.
+                  </p>
+                </div>
                 <Link href="/start">
-                  <Button variant="outline" className="rounded-xl">
-                    Start a walking check <ArrowRight className="h-3.5 w-3.5" />
+                  <Button size="lg" className="rounded-xl">
+                    Record the first 10-second clip
+                    <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
+              </div>
+            ) : visiblePatients.length === 0 ? (
+              <div className="px-4 py-12 text-center text-sm text-muted-foreground">
+                No children match that search.
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -306,21 +351,18 @@ export default function ClinicianPortalPage() {
                       <th className="px-4 py-3 font-semibold">Child</th>
                       <th className="px-4 py-3 font-semibold">Date</th>
                       <th className="px-4 py-3 font-semibold">What we noticed</th>
-                      <th className="px-4 py-3 font-semibold">Follow-Up Priority</th>
+                      <th className="px-4 py-3 font-semibold">Note</th>
                       <th className="px-4 py-3 font-semibold">Quality</th>
-                      <th className="px-4 py-3 font-semibold">Status</th>
                       <th className="px-4 py-3 font-semibold">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {patients.map((patient) => {
+                    {visiblePatients.map((patient) => {
                       const badge = statusBadgeProps(patient.status);
                       const Icon = badge.Icon;
-                      const fpBadge = FOLLOWUP_BADGE_STYLES[toFollowupPriority(patient.followupPriority)];
-                      const fpLabel = FOLLOWUP_SHORT_LABELS[toFollowupPriority(patient.followupPriority)];
                       const concernBadge = CONCERN_BADGE_STYLES[toConcernLevel(patient.concernLevel)];
                       return (
-                        <tr key={patient.id} className="border-b border-border/50 bg-card last:border-b-0 hover:bg-surface-container-low/40 transition-colors">
+                        <tr key={patient.id} className="border-b border-border/50 bg-card last:border-b-0 hover:bg-muted/30 transition-colors">
                           <td className="px-4 py-3">
                             <p className="font-semibold text-foreground">{patient.childName}</p>
                             <p className="text-xs text-muted-foreground">
@@ -339,37 +381,31 @@ export default function ClinicianPortalPage() {
                             )}
                           </td>
                           <td className="px-4 py-3">
-                            <Badge variant="outline" className={`text-[10px] ${fpBadge}`}>
-                              {fpLabel}
+                            <Badge variant="outline" className={`gap-1.5 text-[10px] ${patient.hasPublishedFeedback ? FOLLOWUP_BADGE_STYLES.routine : RUN_TONE_BADGE_STYLES.destructive}`}>
+                              {patient.hasPublishedFeedback ? <CheckCircle2 className="h-3 w-3" /> : <FileText className="h-3 w-3" />}
+                              {patient.hasPublishedFeedback ? "Reviewed" : "Needs note"}
                             </Badge>
-                          </td>
-                          <td className="px-4 py-3 text-xs font-medium text-foreground capitalize">
-                            {patient.qualityResult}
-                          </td>
-                          <td className="px-4 py-3">
-                            <Badge variant="outline" className={`gap-1.5 text-[10px] ${badge.cls}`}>
-                              <Icon className="h-3 w-3" />
+                            <p className="mt-1 text-[11px] text-muted-foreground">
+                              <Icon className="mr-1 inline h-3 w-3" />
                               {badge.label}
-                            </Badge>
+                            </p>
+                          </td>
+                          <td className="px-4 py-3 text-xs font-medium capitalize">
+                            {patient.qualityResult}
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex flex-col gap-1.5">
                               <Link href={`/results/${patient.id}/clinician`}>
                                 <Button size="sm" className="w-full gap-1.5 rounded-lg text-xs">
                                   <FileText className="h-3.5 w-3.5" />
-                                  Open Packet
+                                  Open packet
                                 </Button>
                               </Link>
                               <Link href={`/results/${patient.id}`}>
                                 <Button size="sm" variant="outline" className="w-full gap-1.5 rounded-lg text-xs">
-                                  Patient View
+                                  Family view
                                 </Button>
                               </Link>
-                              <p className="text-[11px] text-muted-foreground">
-                                {patient.hasPublishedFeedback
-                                  ? `Feedback published${patient.feedbackUpdatedAt ? ` (${new Date(patient.feedbackUpdatedAt).toLocaleString()})` : ""}`
-                                  : "No published feedback yet"}
-                              </p>
                             </div>
                           </td>
                         </tr>
@@ -379,19 +415,6 @@ export default function ClinicianPortalPage() {
                 </table>
               </div>
             )}
-          </CardContent>
-        </Card>
-
-        {/* Architecture info */}
-        <Card className="med-slide-up med-stagger-3 border-primary/20 bg-primary/5">
-          <CardContent className="p-4">
-            <p className="mb-1 text-sm font-semibold text-foreground">Production: Real-time patient sync</p>
-            <p className="text-xs text-muted-foreground">
-              In production, patients are linked to this clinic via <code className="rounded bg-muted px-1 font-mono text-[11px]">clinic_patient_links</code>.
-              When a parent completes an assessment it writes immediately to Supabase and appears here via Realtime subscription.
-              In this demo build, published clinician feedback is attached to the local assessment record and appears in the parent portal for the same browser session.
-              The full schema and RLS policies are in <code className="rounded bg-muted px-1 font-mono text-[11px]">supabase/migrations/</code>.
-            </p>
           </CardContent>
         </Card>
     </div>

@@ -60,8 +60,8 @@ type ClinicianTab = "snapshot" | "evidence" | "handoff";
 
 const CLINICIAN_TABS: Array<{ key: ClinicianTab; label: string }> = [
   { key: "snapshot", label: "Snapshot" },
-  { key: "evidence", label: "Advanced Evidence" },
-  { key: "handoff", label: "Handoff & Notes" },
+  { key: "evidence", label: "Evidence" },
+  { key: "handoff", label: "Handoff" },
 ];
 
 interface AiInsightResponse {
@@ -92,7 +92,8 @@ export default function ClinicianResultPage() {
   const params = useParams();
   const router = useRouter();
   const resultId = params.id as string;
-  const noteStorageKey = `gaitbridge_clinician_note_${resultId}`;
+  const noteStorageKey = `pedigrowth_clinician_note_${resultId}`;
+  const legacyNoteStorageKey = `gaitbridge_clinician_note_${resultId}`;
 
   const [activeTab, setActiveTab] = useState<ClinicianTab>("snapshot");
   const [jumpToFrameIndex, setJumpToFrameIndex] = useState<number | null>(null);
@@ -105,7 +106,9 @@ export default function ClinicianResultPage() {
     }
 
     try {
-      return window.localStorage.getItem(noteStorageKey) ?? "";
+      return window.localStorage.getItem(noteStorageKey)
+        ?? window.localStorage.getItem(legacyNoteStorageKey)
+        ?? "";
     } catch {
       return "";
     }
@@ -193,14 +196,16 @@ export default function ClinicianResultPage() {
     try {
       if (clinicianNote.trim().length === 0) {
         window.localStorage.removeItem(noteStorageKey);
+        window.localStorage.removeItem(legacyNoteStorageKey);
         return;
       }
 
       window.localStorage.setItem(noteStorageKey, clinicianNote);
+      window.localStorage.setItem(legacyNoteStorageKey, clinicianNote);
     } catch {
       // Ignore local storage access errors in restricted browsing contexts.
     }
-  }, [clinicianNote, noteStorageKey]);
+  }, [clinicianNote, noteStorageKey, legacyNoteStorageKey]);
 
   useEffect(() => {
     if (!feedbackSyncStatus) {
@@ -332,10 +337,19 @@ export default function ClinicianResultPage() {
   const packetTimestamp = result.analyzedAt ?? result.run.analyzedAt;
   const clipUsabilityLabel =
     result.quality.result === "pass"
-      ? "Usable for interpretation"
+      ? "Usable"
       : result.quality.result === "borderline"
         ? "Use with caution"
-        : "Low usability - interpret carefully";
+        : "Not usable — retake";
+  const inference = result.inferenceDecision;
+  const modelSourceLabel =
+    inference?.source === "hybrid" && inference.backendAvailable
+      ? "Fused model"
+      : "On-device only";
+  const modelSourceDetail =
+    inference?.source === "hybrid" && inference.backendAvailable
+      ? "60% backend model + 40% on-device scoring."
+      : inference?.fallbackReason ?? "Client scoring only. The model server was not used for this clip.";
   const observedSummary =
     result.concerns.overallLevel === "none"
       ? "No clear concern pattern was detected in this recording."
@@ -659,6 +673,31 @@ export default function ClinicianResultPage() {
         </div>
 
         <div className={activeTab === "snapshot" ? "space-y-6" : "hidden print:block print:space-y-6"}>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Card className="medical-surface">
+              <CardContent className="p-4">
+                <p className="text-xs font-medium text-muted-foreground">Clip usable?</p>
+                <p className="mt-1 text-base font-semibold">{clipUsabilityLabel}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{result.quality.confidenceNotes}</p>
+              </CardContent>
+            </Card>
+            <Card className="medical-surface">
+              <CardContent className="p-4">
+                <p className="text-xs font-medium text-muted-foreground">Model source</p>
+                <p className="mt-1 text-base font-semibold">{modelSourceLabel}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{modelSourceDetail}</p>
+              </CardContent>
+            </Card>
+            <Card className="medical-surface">
+              <CardContent className="p-4">
+                <p className="text-xs font-medium text-muted-foreground">Domains not assessed</p>
+                <p className="mt-1 text-base font-semibold">{notAssessedDomainsSummary}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Assessed: {assessedDomainsSummary}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
           
           {/* Dashboard Row 1: Hero Banner Component */}
           <Card className={`print-section border bg-card/90 backdrop-blur-sm transition-all duration-300 hover:shadow-md ${FOLLOWUP_CALLOUT_STYLES[followUpPriority]} shadow-sm`}>
@@ -693,6 +732,34 @@ export default function ClinicianResultPage() {
               </div>
             </CardContent>
           </Card>
+
+          {hasTrace && hasVideo && videoUrl ? (
+            <Card className="medical-surface overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Video className="h-4 w-4" />
+                  Annotated walking clip
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AnnotatedVideoPlayer
+                  trace={result.trace!}
+                  videoUrl={videoUrl}
+                  jumpToFrameIndex={jumpToFrameIndex}
+                  audience="clinician"
+                  showAdvancedControls={false}
+                />
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="medical-surface">
+              <CardContent className="p-4 text-sm text-muted-foreground">
+                {hasTrace
+                  ? "The analysis trace is here, but the clip is not available on this device yet."
+                  : "Annotated video appears here after a completed walking check."}
+              </CardContent>
+            </Card>
+          )}
 
           {/* New Grid layout: Findings Left, Scales Right */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">

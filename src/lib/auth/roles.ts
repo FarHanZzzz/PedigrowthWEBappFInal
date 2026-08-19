@@ -37,8 +37,8 @@ export function canAccessClinicianPortal(role: unknown): boolean {
 export function roleFromPath(pathname: string): UserRole {
   if (
     pathname.startsWith("/portal/clinician") ||
-    pathname.startsWith("/clinician") ||
-    pathname.includes("/clinician")
+    pathname === "/clinician" ||
+    pathname.startsWith("/clinician/")
   ) {
     return "clinician";
   }

@@ -25,7 +25,7 @@ const CLINICIAN_NAV = [
 
 const ADMIN_NAV = [
   { href: "/portal/parent", label: "Family", icon: Home, match: (path: string) => path.startsWith("/portal/parent") },
-  { href: "/portal/clinician", label: "Caseload", icon: Users, match: (path: string) => path.startsWith("/portal/clinician") || path.includes("/clinician") },
+  { href: "/portal/clinician", label: "Caseload", icon: Users, match: (path: string) => path.startsWith("/portal/clinician") },
   { href: "/portal/admin", label: "Admin", icon: Shield, match: (path: string) => path.startsWith("/portal/admin") },
 ];
 
@@ -36,11 +36,7 @@ export default function AppShell({
   const router = useRouter();
   const [role, setRole] = useState<UserRole | null>(null);
   const admin = role === "admin";
-  const clinician =
-    admin ||
-    role === "clinician" ||
-    pathname.includes("/clinician") ||
-    pathname.startsWith("/portal/admin");
+  const clinician = role === "clinician";
   const navItems = admin ? ADMIN_NAV : clinician ? CLINICIAN_NAV : FAMILY_NAV;
   const isResults = pathname.startsWith("/results") || pathname.startsWith("/share");
   const hideBottomNav = pathname.startsWith("/analyzing");

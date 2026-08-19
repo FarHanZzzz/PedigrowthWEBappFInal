@@ -20,7 +20,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import AnnotatedVideoPlayer from "@/components/results/AnnotatedVideoPlayer";
-import PatientSimpleCards from "@/components/results/PatientSimpleCards";
 import { getResult } from "@/lib/session/videoStore";
 import {
   readResultRaw,
@@ -39,7 +38,6 @@ import {
   CONCERN_LABELS,
   CONCERN_PREFIX,
   FOLLOWUP_BADGE_STYLES,
-  FOLLOWUP_CALLOUT_STYLES,
   FOLLOWUP_CALLOUT_TEXT,
   FOLLOWUP_LABELS,
   toConcernLevel,
@@ -744,14 +742,6 @@ export default function ResultsPage() {
   const followupLabel = FOLLOWUP_LABELS[followupPriority];
   const followupSummary = FOLLOWUP_CALLOUT_TEXT[followupPriority];
 
-  const simpleCardObservations =
-    parentImpactRows.length > 0
-      ? parentImpactRows.slice(0, 3).map((entry) => `${entry.label}: ${entry.impact}`)
-      : [
-          "No major concern signal was detected in this clip.",
-          "Keep routine observation and note if walking pattern changes.",
-        ];
-
   const simpleCardActions = [
     "Keep this summary ready for your next appointment.",
     "Track if balance, falls, or asymmetry changes this week.",
@@ -916,7 +906,7 @@ export default function ResultsPage() {
             </div>
             <div className="grid gap-4 border-t border-border/60 pt-4 sm:grid-cols-2">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">How sure this is</p>
+                <p className="text-sm font-medium text-muted-foreground">How sure we are</p>
                 <p className="mt-1 text-sm leading-relaxed">
                   {reportBundle?.caregiver.confidenceText ?? result.quality.confidenceNotes}
                 </p>
@@ -927,6 +917,27 @@ export default function ResultsPage() {
                   {followupLabel}
                 </Badge>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{followupSummary}</p>
+              </div>
+            </div>
+            <div className="grid gap-4 border-t border-border/60 pt-4 sm:grid-cols-2">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">What to do this week</p>
+                <ul className="mt-2 space-y-2 text-sm leading-relaxed">
+                  {simpleCardActions.slice(0, 3).map((item) => (
+                    <li key={item} className="flex gap-2">
+                      <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-primary" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Three questions for the clinician</p>
+                <ol className="mt-2 list-decimal space-y-2 pl-4 text-sm leading-relaxed">
+                  {simpleCardQuestions.slice(0, 3).map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ol>
               </div>
             </div>
           </CardContent>
@@ -971,33 +982,6 @@ export default function ResultsPage() {
 
         {activeTab === "summary" && (
           <div className="space-y-4">
-            <div
-              className={`medical-surface p-5 ${FOLLOWUP_CALLOUT_STYLES[followupPriority]}`}
-              role={followupPriority === "specialist" ? "alert" : undefined}
-            >
-              <p className="text-sm font-medium text-muted-foreground">Suggested next step</p>
-              <p className="mt-1 text-xl font-semibold tracking-tight">{followupLabel}</p>
-              <p className="mt-1 text-sm leading-relaxed">{followupSummary}</p>
-            </div>
-
-              <PatientSimpleCards
-                summaryText={
-                  reportBundle?.caregiver?.observationsText ??
-                  (result.concerns.overallLevel === "none"
-                    ? "No notable gait concern signals were detected in this clip."
-                    : "This clip shows movement patterns worth reviewing more closely.")
-                }
-                confidenceText={
-                  reportBundle?.caregiver?.confidenceText ?? result.quality.confidenceNotes
-                }
-                observations={simpleCardObservations}
-                nextWeekActions={simpleCardActions}
-                followupLabel={followupLabel}
-                followupSummary={followupSummary}
-                followupPriority={followupPriority}
-                clinicianQuestions={simpleCardQuestions}
-              />
-
               <details className="medical-surface p-4">
                 <summary className="cursor-pointer text-sm font-medium">
                   More details
@@ -1401,11 +1385,19 @@ export default function ResultsPage() {
         </Button>
       </div>
 
-      <div className="fixed bottom-3 right-3 z-50 flex flex-col items-end gap-2 print:hidden sm:bottom-4 sm:right-4">
+      {isAssistantOpen && (
+        <button
+          type="button"
+          className="fixed inset-0 z-[55] bg-background/50 print:hidden"
+          aria-label="Close assistant"
+          onClick={() => setIsAssistantOpen(false)}
+        />
+      )}
+      <div className="fixed inset-x-3 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-[60] flex flex-col items-end gap-3 print:hidden md:inset-x-auto md:right-5 md:bottom-5">
         {isAssistantOpen && (
           <div
             id="ai-assistant-panel"
-            className="h-[clamp(22rem,68dvh,42rem)] max-h-[calc(100dvh-4.5rem)] w-[min(34rem,calc(100vw-1rem))] overflow-hidden rounded-2xl shadow-2xl"
+            className="h-[min(34rem,calc(100dvh-9rem))] w-full max-w-[26rem] overflow-hidden md:w-[26rem]"
           >
             <AssistantPanel
               resultId={result.id}
@@ -1422,15 +1414,14 @@ export default function ResultsPage() {
 
         <Button
           id="assistant-toggle-button"
-          variant="outline"
-          size="sm"
+          size="lg"
           onClick={() => setIsAssistantOpen((prev) => !prev)}
-          className="shadow-lg"
+          className="h-14 rounded-full px-5 shadow-lg"
           aria-expanded={isAssistantOpen}
           aria-controls="ai-assistant-panel"
         >
-          <MessageCircle className="mr-2 h-5 w-5" />
-          {isAssistantOpen ? "Close Assistant" : "Ask AI"}
+          {isAssistantOpen ? "Close" : "Ask AI"}
+          <MessageCircle className="h-5 w-5" />
         </Button>
       </div>
     </div>

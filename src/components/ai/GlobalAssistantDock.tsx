@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   collectResultIds,
@@ -89,7 +89,6 @@ function latestResultIdFromSession(): string | null {
 
 function shouldRenderDock(pathname: string): boolean {
   if (pathname === "/") return false;
-  // Parent result page has its own contextual Ask AI panel.
   if (/^\/results\/[^/]+$/.test(pathname)) return false;
   return true;
 }
@@ -176,35 +175,44 @@ export default function GlobalAssistantDock() {
   if (!enabled) return null;
 
   return (
-    <div className="fixed bottom-3 right-3 z-50 flex flex-col items-end gap-2 print:hidden sm:bottom-4 sm:right-4">
+    <>
       {isOpen && (
-        <div
-          id="global-ai-assistant-panel"
-          className="h-[clamp(22rem,68dvh,42rem)] max-h-[calc(100dvh-4.5rem)] w-[min(34rem,calc(100vw-1rem))] overflow-hidden rounded-2xl shadow-2xl"
-        >
-          <AssistantPanel
-            resultId={assistantData.resultId}
-            metrics={assistantData.metrics}
-            risk_category={assistantData.riskCategory}
-            context={assistantData.context}
-            isOpen={isOpen}
-            onToggle={() => setIsOpen(false)}
-          />
-        </div>
+        <button
+          type="button"
+          className="fixed inset-0 z-[55] bg-background/50 print:hidden"
+          aria-label="Close assistant"
+          onClick={() => setIsOpen(false)}
+        />
       )}
+      <div className="fixed inset-x-3 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-[60] flex flex-col items-end gap-3 print:hidden md:inset-x-auto md:right-5 md:bottom-5">
+        {isOpen && (
+          <div
+            id="global-ai-assistant-panel"
+            className="h-[min(34rem,calc(100dvh-9rem))] w-full max-w-[26rem] overflow-hidden md:w-[26rem]"
+          >
+            <AssistantPanel
+              resultId={assistantData.resultId}
+              metrics={assistantData.metrics}
+              risk_category={assistantData.riskCategory}
+              context={assistantData.context}
+              isOpen={isOpen}
+              onToggle={() => setIsOpen(false)}
+            />
+          </div>
+        )}
 
-      <Button
-        id="global-assistant-toggle-button"
-        variant="outline"
-        size="sm"
-        onClick={() => setIsOpen((prev) => !prev)}
-        className="shadow-lg"
-        aria-expanded={isOpen}
-        aria-controls="global-ai-assistant-panel"
-      >
-        <MessageCircle className="mr-2 h-5 w-5" />
-        {isOpen ? "Close Assistant" : "Ask AI"}
-      </Button>
-    </div>
+        <Button
+          id="global-assistant-toggle-button"
+          size="lg"
+          onClick={() => setIsOpen((prev) => !prev)}
+          className="h-14 rounded-full px-5 shadow-lg"
+          aria-expanded={isOpen}
+          aria-controls="global-ai-assistant-panel"
+        >
+          {isOpen ? <X className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}
+          {isOpen ? "Close" : "Ask AI"}
+        </Button>
+      </div>
+    </>
   );
 }

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient } from "@/utils/supabase/client";
 import { ensureUserProfile } from "@/lib/auth/ensureProfile";
@@ -118,7 +119,10 @@ function LoginForm() {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-4 py-10">
+    <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-4 py-10">
+      <div className="absolute right-4 top-4">
+        <ThemeToggle />
+      </div>
       <Link href="/" className="mb-8 inline-flex items-center gap-2 self-center">
         <span className="inline-flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
           <Stethoscope />

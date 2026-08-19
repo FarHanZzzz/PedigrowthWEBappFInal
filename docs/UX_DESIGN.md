@@ -100,7 +100,13 @@ Internal pipeline stages (pose init, landmarks, XGBoost) are **not** parent-faci
 - Intake uses years + months, stored as `ageMonths`
 - Capture is record-then-review; demo/hero tools stay behind demo flags
 - Analyzing uses human stage labels
-- Parent results: verdict, summary/video tabs, extra metrics in More details
-- History is a clip list
-- Portals keep the same data routes with cleaner chrome
-- Context for later sessions: this file plus `docs/PRODUCT_CONTEXT.md`
+- AI assistant: full-height sheet above mobile nav; prompts send on tap; theme-safe
+- Parent results: one verdict card (noticed / sure / this week / 3 questions), Video tab, More details
+- Capture: Record then short review checklist; extra notes collapsed
+- History: photo-roll of walking checks; empty state is “Record the first 10-second clip”
+- Clinician packet: quality + model source + not-assessed domains at top; annotated video on Snapshot
+- Caseload: search, child identity, Needs note vs Reviewed
+- Share links: printable branded handoff
+- Admin chrome follows role, not `/clinician` in the URL
+- Login has the theme toggle
+- Product name is Pedi-Growth in reports and handoff text

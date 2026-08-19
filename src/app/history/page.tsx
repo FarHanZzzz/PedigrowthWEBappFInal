@@ -358,41 +358,55 @@ export default function HistoryPage() {
       </div>
 
       {rows.length === 0 ? (
-        <div className="medical-surface flex flex-col items-center gap-3 px-4 py-12 text-center">
-          <FileSearch className="h-8 w-8 text-muted-foreground" />
-          <p className="font-medium">No walking checks yet</p>
-          <p className="max-w-sm text-sm text-muted-foreground">
-            Record the first clip to see it here.
-          </p>
+        <div className="medical-surface flex flex-col items-center gap-4 px-4 py-14 text-center">
+          <span className="inline-flex size-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <FileSearch className="h-7 w-7" />
+          </span>
+          <div className="space-y-1">
+            <p className="text-lg font-semibold">No walking checks yet</p>
+            <p className="max-w-sm text-sm text-muted-foreground">
+              Record the first 10-second clip. It will show up here like a photo of that walk.
+            </p>
+          </div>
           <Link href="/start">
-            <Button variant="outline" className="rounded-xl">Start a walking check</Button>
+            <Button size="lg" className="rounded-xl">
+              Record the first 10-second clip
+              <ArrowRight className="h-4 w-4" />
+            </Button>
           </Link>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           {rows.map((row) => {
             const meta = statusMeta(row.status);
             const StatusIcon = meta.icon;
             return (
               <Link key={row.id} href={`/results/${row.id}`} className="block">
-                <article className="medical-surface p-4 transition-colors hover:bg-muted/30">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold">{row.childName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {row.ageMonths !== null ? formatAgeMonths(row.ageMonths) : "Age unknown"}
-                        {row.analyzedAt ? ` · ${new Date(row.analyzedAt).toLocaleDateString()}` : ""}
-                      </p>
-                    </div>
-                    <Badge variant="outline" className={`gap-1 ${meta.className}`}>
-                      <StatusIcon className="h-3 w-3" />
-                      {meta.label}
-                    </Badge>
+                <article className="medical-surface overflow-hidden transition-colors hover:bg-muted/30">
+                  <div className="flex h-28 items-center justify-center bg-muted/50">
+                    <span className="inline-flex size-12 items-center justify-center rounded-full bg-card text-primary">
+                      <StatusIcon className="h-5 w-5" />
+                    </span>
                   </div>
-                  <p className="mt-2 text-sm">{humanConcern(row.concernLevel)}</p>
-                  {row.reportSummary && (
-                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{row.reportSummary}</p>
-                  )}
+                  <div className="space-y-2 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold">{row.childName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {row.ageMonths !== null ? formatAgeMonths(row.ageMonths) : "Age unknown"}
+                          {row.analyzedAt ? ` · ${new Date(row.analyzedAt).toLocaleDateString()}` : ""}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className={`gap-1 ${meta.className}`}>
+                        <StatusIcon className="h-3 w-3" />
+                        {meta.label}
+                      </Badge>
+                    </div>
+                    <p className="text-sm">{humanConcern(row.concernLevel)}</p>
+                    {row.reportSummary && (
+                      <p className="line-clamp-2 text-sm text-muted-foreground">{row.reportSummary}</p>
+                    )}
+                  </div>
                 </article>
               </Link>
             );

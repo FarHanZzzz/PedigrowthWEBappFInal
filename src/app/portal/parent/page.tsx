@@ -327,7 +327,7 @@ export default function ParentPortalPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-xs text-muted-foreground">
-                Enter your child&apos;s age, mobility status and key concerns. Takes about 2 minutes.
+                Enter your child&apos;s age and walking status. Then record a 10-second clip.
               </p>
               <Link href="/start">
                 <Button size="sm" className="w-full gap-2 rounded-lg text-xs">
@@ -421,9 +421,9 @@ export default function ParentPortalPage() {
         {/* Recent Assessments table — real session data */}
         <Card className="med-slide-up med-stagger-3 overflow-hidden border-border/70">
           <CardHeader className="border-b border-border/60 bg-card pb-4">
-            <CardTitle className="text-lg">Recent Assessments</CardTitle>
+            <CardTitle className="text-lg">Recent walking checks</CardTitle>
             <p className="text-xs text-muted-foreground">
-              All assessments recorded in this session on this device.
+              Tap a check to reopen the summary and video.
             </p>
           </CardHeader>
           <CardContent className="p-0">
@@ -432,13 +432,13 @@ export default function ParentPortalPage() {
                 <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
                   <FileSearch className="h-5 w-5" />
                 </span>
-                <p className="text-sm font-medium text-foreground">No assessments yet</p>
+                <p className="text-sm font-medium text-foreground">No walking checks yet</p>
                 <p className="max-w-sm text-xs text-muted-foreground">
-                  Run a new intake and complete capture to generate your first result. It will appear here automatically.
+                  Record the first 10-second clip. It will appear here for this child.
                 </p>
                 <Link href="/start">
-                  <Button variant="outline" className="gap-2 text-xs">
-                    Start First Assessment <ArrowRight className="h-3.5 w-3.5" />
+                  <Button className="gap-2 rounded-xl">
+                    Record the first 10-second clip <ArrowRight className="h-3.5 w-3.5" />
                   </Button>
                 </Link>
               </div>

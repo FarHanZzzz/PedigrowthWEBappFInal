@@ -187,7 +187,7 @@ function buildHandoffText(
   };
 
   return [
-    `GAITBRIDGE Clinician Handoff - ${nickname}`,
+    `Pedi-Growth clinician handoff - ${nickname}`,
     `Assessment ID: ${caregiverReport.assessmentId}`,
     `Observed summary: ${caregiverReport.observationsText}`,
     `Confidence context: ${caregiverReport.confidenceText}`,
@@ -244,7 +244,7 @@ export function buildReportBundle(input: BuildReportBundleInput): ReportBundle {
       'What timeline is appropriate for the next review?',
     ],
     disclaimerText:
-      'GAITBRIDGE is a gait concern documentation and communication support tool. It does not diagnose medical conditions and does not replace professional evaluation.',
+      'Pedi-Growth is a walking-check documentation tool. It does not diagnose medical conditions and does not replace professional evaluation.',
     reportVersion: REPORT_VERSION,
     createdAt,
   };

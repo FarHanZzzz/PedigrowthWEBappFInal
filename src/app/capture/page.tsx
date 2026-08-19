@@ -180,9 +180,7 @@ export default function CapturePage() {
   const [clinicianContext, setClinicianContext] = useState<ClinicianContextDraft>(() =>
     readSavedContextDraft(),
   );
-  const [isClinicianContextOpen, setIsClinicianContextOpen] = useState(() =>
-    hasAnyContextValue(readSavedContextDraft()),
-  );
+  const [isClinicianContextOpen, setIsClinicianContextOpen] = useState(false);
   const [showDemoTools, setShowDemoTools] = useState(false);
   const recordFileInputRef = useRef<HTMLInputElement>(null);
   const uploadFileInputRef = useRef<HTMLInputElement>(null);
@@ -625,52 +623,28 @@ export default function CapturePage() {
             </Card>
             )}
 
-            {/* Side view callout */}
             <Card className="border-primary/30 bg-primary/5">
               <CardContent className="flex gap-3 p-4">
                 <Smartphone className="h-5 w-5 shrink-0 text-primary mt-0.5" />
-                <div className="text-xs leading-relaxed">
+                <div className="text-sm leading-relaxed">
                   <p className="font-semibold text-foreground mb-1">
-                    Front-view works best for this analysis
+                    Two steps: record, then review
                   </p>
                   <p className="text-muted-foreground">
-                    Stand facing the walking path. Your child walks toward
-                    or away from the camera. Phone at waist height, held still.
+                    Front view, full body, phone still at waist height. After recording you will get a short checklist before analysis.
                   </p>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Quick checklist */}
-            <Card>
-              <CardContent className="space-y-2 p-4">
-                <p className="text-sm font-semibold text-foreground">Quick recording checklist</p>
-                {QUICK_CHECKLIST.map((item) => (
-                  <div key={item} className="flex items-start gap-2.5 rounded-lg bg-muted/20 p-2.5 text-xs">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-concern-none" />
-                    <span className="text-foreground/85">{item}</span>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            <details className="rounded-lg border border-border/60 bg-card px-3 py-2">
-              <summary className="cursor-pointer text-xs font-semibold text-foreground">
-                Show full recording tips
-              </summary>
-              <div className="mt-3 space-y-2">
-                {TIPS.map((tip) => (
-                  <div key={tip.text} className="flex gap-2.5 rounded-lg bg-muted/20 p-2.5 text-xs">
-                    {tip.do ? (
-                      <CheckCircle2 className="h-4 w-4 shrink-0 text-concern-none" />
-                    ) : (
-                      <XCircle className="h-4 w-4 shrink-0 text-concern-significant/70" />
-                    )}
-                    <span className="text-foreground/85">{tip.text}</span>
-                  </div>
-                ))}
-              </div>
-            </details>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              {QUICK_CHECKLIST.map((item) => (
+                <li key={item} className="flex items-start gap-2">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
 
             {/* Actions */}
             <div className="space-y-3 pt-2">
@@ -802,14 +776,32 @@ export default function CapturePage() {
             )}
 
             <Card className="bg-muted/30">
-              <CardContent className="p-4 text-xs text-muted-foreground space-y-1">
+              <CardContent className="p-4 space-y-3">
+                <p className="text-sm font-semibold">Short review checklist</p>
                 {validationMode && (
-                  <p>✓ Validation mode: no fallback, no fixture substitution, explicit run badge</p>
+                  <p className="text-xs text-muted-foreground">Validation mode is on. This run will fail loudly if analysis is not real.</p>
                 )}
-                <p>✓ Does the video show your child walking toward or away from the camera?</p>
-                <p>✓ Is the full body visible (head to feet)?</p>
-                <p>✓ Are there at least 4-6 steps?</p>
-                <p>✓ Is the lighting adequate?</p>
+                {QUICK_CHECKLIST.map((item) => (
+                  <label key={item} className="flex items-start gap-2.5 text-sm">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                    <span>{item}</span>
+                  </label>
+                ))}
+                <details className="rounded-lg border border-border/60 bg-card px-3 py-2">
+                  <summary className="cursor-pointer text-xs font-semibold">More recording tips</summary>
+                  <div className="mt-3 space-y-2">
+                    {TIPS.map((tip) => (
+                      <div key={tip.text} className="flex gap-2.5 text-xs">
+                        {tip.do ? (
+                          <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
+                        ) : (
+                          <XCircle className="h-4 w-4 shrink-0 text-destructive/70" />
+                        )}
+                        <span>{tip.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </details>
               </CardContent>
             </Card>
 
@@ -881,10 +873,11 @@ export default function CapturePage() {
                 >
                   <div className="space-y-1">
                     <p className="text-sm font-semibold">
-                      Optional clinician context
+                      Add extra notes
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Add extra intake details for clinician packet section 2.
+                      Optional. These notes go to the clinician packet, not the family summary.
+                      {hasAnyContextValue(clinicianContext) ? " Notes saved." : ""}
                     </p>
                   </div>
                   <ChevronDown
