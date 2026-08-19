@@ -44,6 +44,27 @@ export async function uploadVideoToCloud(
   return data.publicUrl || null;
 }
 
+export async function findCloudVideoUrl(resultId: string): Promise<string | null> {
+  const supabase = createClient();
+  const { data, error } = await supabase.storage.from(VIDEO_BUCKET).list(resultId, {
+    limit: 20,
+  });
+
+  if (error || !data || data.length === 0) {
+    return null;
+  }
+
+  const file = data.find((entry) => entry.name && !entry.name.endsWith("/"));
+  if (!file) {
+    return null;
+  }
+
+  const { data: publicData } = supabase.storage
+    .from(VIDEO_BUCKET)
+    .getPublicUrl(`${resultId}/${file.name}`);
+  return publicData.publicUrl || null;
+}
+
 export async function fetchResultFromCloud(resultId: string): Promise<Record<string, unknown> | null> {
   const supabase = createClient();
   

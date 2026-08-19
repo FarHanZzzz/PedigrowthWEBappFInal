@@ -229,19 +229,21 @@ export default function AdminPortalPage() {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-5">
       <section className="medical-surface p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="medical-title text-3xl font-semibold">Admin overview</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Activity, quality, and routing across saved walking checks.
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="medical-title text-3xl font-semibold">Admin dashboard</h1>
+            <p className="text-sm text-muted-foreground">
+              This account can open the family dashboard and the clinician caseload.
             </p>
           </div>
-          <Link href="/start">
-            <Button className="rounded-xl" size="lg">
-              New check
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/portal/parent">
+              <Button variant="outline" className="rounded-xl">Family dashboard</Button>
+            </Link>
+            <Link href="/portal/clinician">
+              <Button className="rounded-xl">Clinician caseload</Button>
+            </Link>
+          </div>
         </div>
       </section>
 

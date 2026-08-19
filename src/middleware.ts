@@ -1,6 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/utils/supabase/middleware";
-import { dashboardPath, normalizeRole, roleFromPath } from "@/lib/auth/roles";
+import {
+  canAccessClinicianPortal,
+  canAccessParentPortal,
+  dashboardPath,
+  normalizeRole,
+  roleFromPath,
+} from "@/lib/auth/roles";
 
 const PUBLIC_PREFIXES = [
   "/login",
@@ -37,18 +43,16 @@ export async function middleware(request: NextRequest) {
       const role = normalizeRole(user.user_metadata?.role);
       const url = request.nextUrl.clone();
       const next = request.nextUrl.searchParams.get("next");
-      url.pathname = next && next.startsWith("/") ? next : dashboardPath(role);
+      const preferred = roleFromPath(next ?? pathname);
+      url.pathname = next && next.startsWith("/") ? next : dashboardPath(role, preferred);
       url.search = "";
       return NextResponse.redirect(url);
     }
 
-    if (user && pathname.startsWith("/portal/clinician")) {
-      const role = normalizeRole(user.user_metadata?.role);
-      if (role === "parent") {
-        const url = request.nextUrl.clone();
-        url.pathname = "/portal/parent";
-        return NextResponse.redirect(url);
-      }
+    if (user && pathname.startsWith("/portal/clinician") && !canAccessClinicianPortal(user.user_metadata?.role)) {
+      const url = request.nextUrl.clone();
+      url.pathname = dashboardPath(user.user_metadata?.role);
+      return NextResponse.redirect(url);
     }
 
     if (user && pathname.startsWith("/portal/admin")) {
@@ -60,13 +64,10 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    if (user && pathname.startsWith("/portal/parent")) {
-      const role = normalizeRole(user.user_metadata?.role);
-      if (role === "clinician" || role === "admin") {
-        const url = request.nextUrl.clone();
-        url.pathname = dashboardPath(role);
-        return NextResponse.redirect(url);
-      }
+    if (user && pathname.startsWith("/portal/parent") && !canAccessParentPortal(user.user_metadata?.role)) {
+      const url = request.nextUrl.clone();
+      url.pathname = dashboardPath(user.user_metadata?.role);
+      return NextResponse.redirect(url);
     }
 
     return supabaseResponse;

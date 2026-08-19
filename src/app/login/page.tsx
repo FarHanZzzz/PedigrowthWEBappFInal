@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createClient } from "@/utils/supabase/client";
 import { ensureUserProfile } from "@/lib/auth/ensureProfile";
-import { dashboardPath, normalizeRole, type UserRole } from "@/lib/auth/roles";
+import { dashboardPath, isAdminEmail, normalizeRole, type UserRole } from "@/lib/auth/roles";
 
 function LoginForm() {
   const router = useRouter();
@@ -33,9 +33,11 @@ function LoginForm() {
     [role],
   );
 
-  async function finishSession(userRole: UserRole) {
+  async function finishSession(userRole: UserRole, preferredView?: UserRole) {
     const destination =
-      nextPath && nextPath.startsWith("/") ? nextPath : dashboardPath(userRole);
+      nextPath && nextPath.startsWith("/")
+        ? nextPath
+        : dashboardPath(userRole, preferredView);
     router.replace(destination);
     router.refresh();
   }
@@ -75,7 +77,7 @@ function LoginForm() {
         }
 
         const resolved = await ensureUserProfile(supabase, data.user, role);
-        await finishSession(resolved);
+        await finishSession(resolved, role);
         return;
       }
 
@@ -89,8 +91,14 @@ function LoginForm() {
         return;
       }
 
-      const existingRole = normalizeRole(data.user.user_metadata?.role);
-      if (existingRole !== role && data.user.user_metadata?.role) {
+      const existingRole = isAdminEmail(data.user.email)
+        ? "admin"
+        : normalizeRole(data.user.user_metadata?.role);
+      if (
+        existingRole !== "admin" &&
+        existingRole !== role &&
+        data.user.user_metadata?.role
+      ) {
         setError(
           existingRole === "clinician"
             ? "This account is a clinician account. Switch the tab above and try again."
@@ -101,7 +109,7 @@ function LoginForm() {
       }
 
       const resolved = await ensureUserProfile(supabase, data.user, role);
-      await finishSession(resolved);
+      await finishSession(resolved, role);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Authentication failed.");
     } finally {
@@ -208,6 +216,9 @@ function LoginForm() {
             >
               {mode === "signin" ? "Create one" : "Sign in"}
             </button>
+          </p>
+          <p className="mt-2 text-center text-xs text-muted-foreground">
+            Admin can sign in on either tab, then switch Family and Caseload in the header.
           </p>
         </CardContent>
       </Card>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, ShieldCheck, Stethoscope, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function HeroLandingPage() {
   return (
@@ -12,9 +13,12 @@ export default function HeroLandingPage() {
           </span>
           <span className="text-base font-semibold tracking-tight">Pedi-Growth</span>
         </Link>
-        <Link href="/login?role=parent" className="text-sm font-medium text-muted-foreground hover:text-foreground">
-          Sign in
-        </Link>
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          <Link href="/login?role=parent" className="rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
+            Sign in
+          </Link>
+        </div>
       </header>
 
       <main className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6">

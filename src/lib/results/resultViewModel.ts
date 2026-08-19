@@ -172,18 +172,25 @@ export function useResultViewModel(resultId: string): ResultViewModel {
         const { getPlaybackVideo } = await import("@/lib/session/videoStore");
         const videoData = await getPlaybackVideo(resolvedResult.id, sessionId);
         if (!active) return;
-        if (!videoData?.blob) {
+        if (videoData?.blob) {
+          objectUrl = URL.createObjectURL(videoData.blob);
+          if (!active) {
+            URL.revokeObjectURL(objectUrl);
+            objectUrl = null;
+            return;
+          }
+          setVideoUrl(objectUrl);
+          return;
+        }
+
+        if (fallbackUrl) {
           setVideoUrl(fallbackUrl);
           return;
         }
 
-        objectUrl = URL.createObjectURL(videoData.blob);
-        if (!active) {
-          URL.revokeObjectURL(objectUrl);
-          objectUrl = null;
-          return;
-        }
-        setVideoUrl(objectUrl);
+        const { findCloudVideoUrl } = await import("@/lib/db/cloudStorage");
+        const cloudUrl = await findCloudVideoUrl(resolvedResult.id);
+        if (active) setVideoUrl(cloudUrl);
       } catch {
         if (active) setVideoUrl(fallbackUrl);
       }

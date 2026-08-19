@@ -452,17 +452,36 @@ export default function ResultsPage() {
 
     import("@/lib/session/videoStore")
       .then(({ getPlaybackVideo }) => getPlaybackVideo(result.id, sessionId))
-      .then((videoData) => {
+      .then(async (videoData) => {
         if (cancelled) return;
-        if (!videoData?.blob) {
+        if (videoData?.blob) {
+          objectUrlRef.current = URL.createObjectURL(videoData.blob);
+          setVideoUrl(objectUrlRef.current);
+          return;
+        }
+
+        if (fallbackUrl) {
           setVideoUrl(fallbackUrl);
           return;
         }
-        objectUrlRef.current = URL.createObjectURL(videoData.blob);
-        setVideoUrl(objectUrlRef.current);
+
+        const { findCloudVideoUrl } = await import("@/lib/db/cloudStorage");
+        const cloudUrl = await findCloudVideoUrl(result.id);
+        if (!cancelled) setVideoUrl(cloudUrl);
       })
-      .catch(() => {
-        if (!cancelled) setVideoUrl(fallbackUrl);
+      .catch(async () => {
+        if (cancelled) return;
+        if (fallbackUrl) {
+          setVideoUrl(fallbackUrl);
+          return;
+        }
+        try {
+          const { findCloudVideoUrl } = await import("@/lib/db/cloudStorage");
+          const cloudUrl = await findCloudVideoUrl(result.id);
+          if (!cancelled) setVideoUrl(cloudUrl);
+        } catch {
+          if (!cancelled) setVideoUrl(null);
+        }
       });
 
     return () => {

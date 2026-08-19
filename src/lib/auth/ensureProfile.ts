@@ -1,13 +1,16 @@
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import type { UserRole } from "./roles";
-import { normalizeRole } from "./roles";
+import { isAdminEmail, normalizeRole } from "./roles";
 
 export async function ensureUserProfile(
   supabase: SupabaseClient,
   user: User,
   requestedRole?: UserRole,
 ): Promise<UserRole> {
-  const role = normalizeRole(requestedRole ?? user.user_metadata?.role);
+  const existing = normalizeRole(user.user_metadata?.role);
+  const role = existing === "admin" || isAdminEmail(user.email)
+    ? "admin"
+    : normalizeRole(requestedRole ?? user.user_metadata?.role);
 
   try {
     await supabase.from("user_profiles").upsert(

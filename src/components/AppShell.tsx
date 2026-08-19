@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { FileClock, Home, LogOut, Plus, Stethoscope, Users } from "lucide-react";
+import { FileClock, Home, LogOut, Plus, Shield, Stethoscope, Users } from "lucide-react";
 import GlobalAssistantDock from "@/components/ai/GlobalAssistantDock";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
@@ -23,14 +23,25 @@ const CLINICIAN_NAV = [
   { href: "/start", label: "New check", icon: Plus, match: (path: string) => path.startsWith("/start") || path.startsWith("/capture") || path.startsWith("/analyzing") },
 ];
 
+const ADMIN_NAV = [
+  { href: "/portal/parent", label: "Family", icon: Home, match: (path: string) => path.startsWith("/portal/parent") },
+  { href: "/portal/clinician", label: "Caseload", icon: Users, match: (path: string) => path.startsWith("/portal/clinician") || path.includes("/clinician") },
+  { href: "/portal/admin", label: "Admin", icon: Shield, match: (path: string) => path.startsWith("/portal/admin") },
+];
+
 export default function AppShell({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
   const router = useRouter();
   const [role, setRole] = useState<UserRole | null>(null);
-  const clinician = role === "clinician" || role === "admin" || pathname.includes("/clinician") || pathname.startsWith("/portal/admin");
-  const navItems = clinician ? CLINICIAN_NAV : FAMILY_NAV;
+  const admin = role === "admin";
+  const clinician =
+    admin ||
+    role === "clinician" ||
+    pathname.includes("/clinician") ||
+    pathname.startsWith("/portal/admin");
+  const navItems = admin ? ADMIN_NAV : clinician ? CLINICIAN_NAV : FAMILY_NAV;
   const isResults = pathname.startsWith("/results") || pathname.startsWith("/share");
   const hideBottomNav = pathname.startsWith("/analyzing");
 
@@ -54,7 +65,10 @@ export default function AppShell({
     <div className="flex min-h-dvh flex-col bg-background">
       <header className="sticky top-0 z-50 border-b border-border/60 bg-background/90 backdrop-blur-md">
         <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Link href={clinician ? "/portal/clinician" : "/portal/parent"} className="inline-flex items-center gap-2">
+          <Link
+            href={admin ? "/portal/admin" : clinician ? "/portal/clinician" : "/portal/parent"}
+            className="inline-flex items-center gap-2"
+          >
             <span className="inline-flex size-8 items-center justify-center rounded-xl bg-primary text-primary-foreground">
               <Stethoscope />
             </span>
@@ -133,4 +147,3 @@ export default function AppShell({
     </div>
   );
 }
-

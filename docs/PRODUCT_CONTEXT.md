@@ -86,7 +86,7 @@ Old results without `videoUrl` need a **new analysis** after the video bucket ex
 
 - Parent login → `/portal/parent`
 - Clinician login → `/portal/clinician`
-- Admin login → `/portal/admin`
+- Admin login (`admin@gmail.com`) → either dashboard; header switches Family / Caseload / Admin
 - Sign out returns to `/`
 
 ## Backend keep-alive
