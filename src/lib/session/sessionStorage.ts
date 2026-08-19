@@ -73,6 +73,17 @@ export function writeResult(resultId: string, value: unknown): void {
   writeResultRaw(resultId, JSON.stringify(value));
 }
 
+export function removeResult(resultId: string): void {
+  const storage = getBrowserSessionStorage();
+  if (!storage) {
+    return;
+  }
+
+  for (const key of resultKeys(resultId)) {
+    storage.removeItem(key);
+  }
+}
+
 export function collectResultIds(storage: Storage): string[] {
   const ids = new Set<string>();
 

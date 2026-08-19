@@ -27,6 +27,7 @@ const ADMIN_NAV = [
   { href: "/portal/admin", label: "Home", icon: Home, match: (path: string) => path.startsWith("/portal/admin") },
   { href: "/portal/parent", label: "Family", icon: Users, match: (path: string) => path.startsWith("/portal/parent") },
   { href: "/portal/clinician", label: "Caseload", icon: Stethoscope, match: (path: string) => path.startsWith("/portal/clinician") },
+  { href: "/history", label: "History", icon: FileClock, match: (path: string) => path.startsWith("/history") || path.startsWith("/results") },
 ];
 
 function navForPath(pathname: string) {
@@ -129,7 +130,7 @@ export default function AppShell({
 
       {!hideBottomNav && (
         <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-border/60 bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden">
-          <div className="mx-auto grid max-w-lg grid-cols-3 px-2 py-1.5">
+          <div className={cn("mx-auto grid max-w-lg px-2 py-1.5", navItems.length > 3 ? "grid-cols-4" : "grid-cols-3")}>
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = item.match(pathname);

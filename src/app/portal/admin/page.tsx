@@ -12,12 +12,14 @@ import {
   RefreshCw,
   Shield,
   ShieldCheck,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatAgeMonths } from "@/lib/presentation/age";
 import { collectResultIds, readResultRaw } from "@/lib/session/sessionStorage";
+import { deleteAssessmentAsAdmin } from "@/lib/session/deleteAssessment";
 import { fetchRecentResultsFromCloud, type CloudResultRecord } from "@/lib/db/cloudStorage";
 import {
   CONCERN_LABELS,
@@ -146,6 +148,9 @@ function statusMeta(status: RowStatus) {
 export default function AdminPortalPage() {
   const [localRows, setLocalRows] = useState<AssessmentRow[]>([]);
   const [cloudRows, setCloudRows] = useState<AssessmentRow[]>([]);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -226,6 +231,27 @@ export default function AdminPortalPage() {
     qFail: rows.filter(r => r.qualityResult === "fail").length,
   }), [rows]);
 
+  const handleDeleteAssessment = async (row: AssessmentRow) => {
+    if (pendingDeleteId !== row.id) {
+      setPendingDeleteId(row.id);
+      setDeleteError(null);
+      return;
+    }
+
+    setDeletingId(row.id);
+    setDeleteError(null);
+    try {
+      await deleteAssessmentAsAdmin(row.id);
+      setLocalRows((current) => current.filter((item) => item.id !== row.id));
+      setCloudRows((current) => current.filter((item) => item.id !== row.id));
+      setPendingDeleteId(null);
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : "Could not delete this assessment.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <div className="w-full space-y-5">
       <section className="medical-surface p-6">
@@ -295,8 +321,11 @@ export default function AdminPortalPage() {
           <CardHeader className="border-b border-border/60 bg-card pb-4">
             <CardTitle className="text-lg">All Assessment Records</CardTitle>
             <p className="text-xs text-muted-foreground">
-              Complete system-wide log of all assessments recorded in this session.
+              Complete system-wide log of assessments. Admins can permanently delete a record from this browser and the cloud.
             </p>
+            {deleteError && (
+              <p className="mt-2 text-xs text-red-700 dark:text-red-300">{deleteError}</p>
+            )}
           </CardHeader>
           <CardContent className="p-0">
             {rows.length === 0 ? (
@@ -317,80 +346,73 @@ export default function AdminPortalPage() {
                 </Link>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full border-collapse text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-border/60 bg-surface-container-low text-xs uppercase tracking-wide text-muted-foreground">
-                      <th className="px-4 py-3 font-semibold">Patient</th>
-                      <th className="px-4 py-3 font-semibold">Assessed At</th>
-                      <th className="px-4 py-3 font-semibold">Concern</th>
-                      <th className="px-4 py-3 font-semibold">Follow-Up</th>
-                      <th className="px-4 py-3 font-semibold">Quality</th>
-                      <th className="px-4 py-3 font-semibold">Status</th>
-                      <th className="px-4 py-3 font-semibold">View</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((row) => {
-                      const meta = statusMeta(row.status);
-                      const Icon = meta.Icon;
-                      const concernBadge = CONCERN_BADGE_STYLES[toConcernLevel(row.concernLevel)];
-                      const fpBadge = FOLLOWUP_BADGE_STYLES[toFollowupPriority(row.followupPriority)];
-                      const fpLabel = FOLLOWUP_SHORT_LABELS[toFollowupPriority(row.followupPriority)];
-                      return (
-                        <tr key={row.id} className="border-b border-border/50 bg-card last:border-b-0 hover:bg-surface-container-low/40 transition-colors">
-                          <td className="px-4 py-3 align-top">
-                            <p className="font-semibold text-foreground">{row.childName}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {formatAgeMonths(row.ageMonths)}
-                            </p>
-                            <p className="text-[11px] text-muted-foreground/70">ID: {row.id}</p>
-                          </td>
-                          <td className="px-4 py-3 align-top text-xs text-muted-foreground">
-                            {row.analyzedAt ? new Date(row.analyzedAt).toLocaleString() : "—"}
-                            <p className="mt-0.5 text-[11px] text-muted-foreground/70">{row.routeLabel}</p>
-                          </td>
-                          <td className="px-4 py-3 align-top">
-                            <Badge variant="outline" className={`text-[10px] ${concernBadge}`}>
-                              {CONCERN_LABELS[toConcernLevel(row.concernLevel)]}
-                            </Badge>
-                          </td>
-                          <td className="px-4 py-3 align-top">
-                            <Badge variant="outline" className={`text-[10px] ${fpBadge}`}>
-                              {fpLabel}
-                            </Badge>
-                          </td>
-                          <td className="px-4 py-3 align-top">
-                            <p className="text-xs font-medium capitalize text-foreground">{row.qualityResult}</p>
-                            <p className="mt-0.5 max-w-45 text-[11px] text-muted-foreground line-clamp-2">
-                              {row.confidenceNotes}
-                            </p>
-                          </td>
-                          <td className="px-4 py-3 align-top">
-                            <Badge variant="outline" className={`gap-1.5 text-[10px] ${meta.cls}`}>
-                              <Icon className="h-3 w-3" />
-                              {meta.label}
-                            </Badge>
-                          </td>
-                          <td className="px-4 py-3 align-top">
-                            <div className="flex flex-col gap-1.5">
-                              <Link href={`/results/${row.id}`}>
-                                <Button size="sm" className="w-full gap-1.5 rounded-lg text-xs">
-                                  Patient View
-                                </Button>
-                              </Link>
-                              <Link href={`/results/${row.id}/clinician`}>
-                                <Button size="sm" variant="outline" className="w-full gap-1.5 rounded-lg text-xs">
-                                  Clinic Packet
-                                </Button>
-                              </Link>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+              <div className="divide-y divide-border/60">
+                {rows.map((row) => {
+                  const meta = statusMeta(row.status);
+                  const Icon = meta.Icon;
+                  const concernBadge = CONCERN_BADGE_STYLES[toConcernLevel(row.concernLevel)];
+                  const fpBadge = FOLLOWUP_BADGE_STYLES[toFollowupPriority(row.followupPriority)];
+                  const fpLabel = FOLLOWUP_SHORT_LABELS[toFollowupPriority(row.followupPriority)];
+                  const isPending = pendingDeleteId === row.id;
+                  const isDeleting = deletingId === row.id;
+                  return (
+                    <article key={row.id} className="space-y-3 p-4 sm:p-5">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-foreground">{row.childName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatAgeMonths(row.ageMonths)}
+                            {row.analyzedAt ? ` · ${new Date(row.analyzedAt).toLocaleString()}` : ""}
+                          </p>
+                          <p className="mt-0.5 text-[11px] text-muted-foreground/70">{row.routeLabel}</p>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          <Badge variant="outline" className={`text-[10px] ${concernBadge}`}>
+                            {CONCERN_LABELS[toConcernLevel(row.concernLevel)]}
+                          </Badge>
+                          <Badge variant="outline" className={`text-[10px] ${fpBadge}`}>
+                            {fpLabel}
+                          </Badge>
+                          <Badge variant="outline" className={`gap-1.5 text-[10px] ${meta.cls}`}>
+                            <Icon className="h-3 w-3" />
+                            {meta.label}
+                          </Badge>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Quality: <span className="capitalize text-foreground">{row.qualityResult}</span>
+                        {row.confidenceNotes ? ` — ${row.confidenceNotes}` : ""}
+                      </p>
+                      <div className="grid gap-2 sm:grid-cols-3">
+                        <Link href={`/results/${row.id}`} className="block">
+                          <Button size="sm" className="h-10 w-full rounded-xl text-xs">
+                            Patient View
+                          </Button>
+                        </Link>
+                        <Link href={`/results/${row.id}/clinician`} className="block">
+                          <Button size="sm" variant="outline" className="h-10 w-full rounded-xl text-xs">
+                            Clinic Packet
+                          </Button>
+                        </Link>
+                        <button
+                          type="button"
+                          disabled={isDeleting}
+                          onClick={() => {
+                            void handleDeleteAssessment(row);
+                          }}
+                          className={`inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-semibold disabled:opacity-50 ${
+                            isPending
+                              ? "border-red-600 bg-red-600 text-white hover:bg-red-700"
+                              : "border-red-300 bg-red-50 text-red-800 hover:bg-red-100 dark:border-red-500/50 dark:bg-red-950/40 dark:text-red-200"
+                          }`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          {isDeleting ? "Deleting…" : isPending ? "Confirm delete" : "Delete assessment"}
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             )}
           </CardContent>

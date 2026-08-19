@@ -9,6 +9,7 @@ import {
   FileSearch,
   RefreshCw,
   Search,
+  Trash2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import {
   toConcernLevel,
 } from "@/lib/presentation/severity";
 import { collectResultIds, readResultRaw } from "@/lib/session/sessionStorage";
+import { deleteAssessmentAsAdmin } from "@/lib/session/deleteAssessment";
 import { fetchRecentResultsFromCloud, type CloudResultRecord } from "@/lib/db/cloudStorage";
 import { useAuthRole } from "@/lib/auth/useAuthRole";
 
@@ -212,6 +214,8 @@ export default function HistoryPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | HistoryStatus>("all");
   const [localRows, setLocalRows] = useState<HistoryRow[]>([]);
   const [cloudRows, setCloudRows] = useState<HistoryRow[]>([]);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -309,6 +313,25 @@ export default function HistoryPage() {
     };
   }, [allRows]);
 
+  const handleDeleteAssessment = async (row: HistoryRow) => {
+    if (pendingDeleteId !== row.id) {
+      setPendingDeleteId(row.id);
+      return;
+    }
+
+    setDeletingId(row.id);
+    try {
+      await deleteAssessmentAsAdmin(row.id);
+      setLocalRows((current) => current.filter((item) => item.id !== row.id));
+      setCloudRows((current) => current.filter((item) => item.id !== row.id));
+      setPendingDeleteId(null);
+    } catch (error) {
+      console.error("Failed to delete assessment:", error);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <div className="w-full space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -384,15 +407,17 @@ export default function HistoryPage() {
           {rows.map((row) => {
             const meta = statusMeta(row.status);
             const StatusIcon = meta.icon;
+            const isPending = pendingDeleteId === row.id;
+            const isDeleting = deletingId === row.id;
             return (
-              <Link key={row.id} href={resultHref(row.id)} className="block">
-                <article className="medical-surface overflow-hidden transition-colors hover:bg-muted/30">
+              <article key={row.id} className="medical-surface overflow-hidden">
+                <Link href={resultHref(row.id)} className="block">
                   <div className="flex h-28 items-center justify-center bg-muted/50">
                     <span className="inline-flex size-12 items-center justify-center rounded-full bg-card text-primary">
                       <StatusIcon className="h-5 w-5" />
                     </span>
                   </div>
-                  <div className="space-y-2 p-4">
+                  <div className="space-y-2 p-4 pb-2">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-semibold">{row.childName}</p>
@@ -411,8 +436,27 @@ export default function HistoryPage() {
                       <p className="line-clamp-2 text-sm text-muted-foreground">{row.reportSummary}</p>
                     )}
                   </div>
-                </article>
-              </Link>
+                </Link>
+                {role === "admin" && (
+                  <div className="px-4 pb-4">
+                    <button
+                      type="button"
+                      disabled={isDeleting}
+                      onClick={() => {
+                        void handleDeleteAssessment(row);
+                      }}
+                      className={`inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-semibold disabled:opacity-50 ${
+                        isPending
+                          ? "border-red-600 bg-red-600 text-white hover:bg-red-700"
+                          : "border-red-300 bg-red-50 text-red-800 hover:bg-red-100 dark:border-red-500/50 dark:bg-red-950/40 dark:text-red-200"
+                      }`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      {isDeleting ? "Deleting…" : isPending ? "Confirm delete" : "Delete assessment"}
+                    </button>
+                  </div>
+                )}
+              </article>
             );
           })}
         </div>
