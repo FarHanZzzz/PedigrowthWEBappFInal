@@ -19,12 +19,12 @@ import {
   X,
 } from "lucide-react";
 import { runAnalysisPipeline } from "@/lib/session/analysisSession";
-import { saveResult } from "@/lib/session/videoStore";
+import { getVideo, saveResult } from "@/lib/session/videoStore";
 import {
   readSessionRaw,
   writeSession,
 } from "@/lib/session/sessionStorage";
-import { saveResultToCloud } from "@/lib/db/cloudStorage";
+import { saveResultToCloud, uploadVideoToCloud } from "@/lib/db/cloudStorage";
 import type { PipelineProgress } from "@/lib/session/analysisSession";
 
 const STAGE_LABELS = [
@@ -159,15 +159,32 @@ export default function AnalyzingPage() {
           clearTimeout(timeoutId);
         }
         const resultId = result.id;
+        let payload = result;
 
         try {
-          await saveResultToCloud(resultId, result);
+          const videoData = await getVideo(sessionId);
+          if (videoData?.blob) {
+            const cloudUrl = await uploadVideoToCloud(
+              resultId,
+              videoData.blob,
+              videoData.name,
+            );
+            if (cloudUrl) {
+              payload = { ...result, videoUrl: cloudUrl };
+            }
+          }
+        } catch (e) {
+          console.error("Failed to upload analysis clip to cloud:", e);
+        }
+
+        try {
+          await saveResultToCloud(resultId, payload);
         } catch (e) {
           console.error("Failed to save to Supabase cloud:", e);
           // Fallback to IndexedDB if network fails so the demo continues
         }
-        
-        saveResult(resultId, result).catch(() => {});
+
+        saveResult(resultId, payload).catch(() => {});
 
         setCurrentStage(STAGE_LABELS.length);
         setProgress(100);
@@ -414,7 +431,7 @@ export default function AnalyzingPage() {
             Cancel Analysis
           </button>
           <span className="analyzing-privacy">
-            🔒 Video is processed locally on your device — nothing is uploaded
+            🔒 Analysis runs on your device. The clip is saved so you can open results on phone or desktop.
           </span>
         </div>
       </div>

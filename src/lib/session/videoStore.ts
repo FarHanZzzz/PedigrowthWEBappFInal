@@ -1,7 +1,7 @@
 // PEDI-GROWTH — Video & Results Store (IndexedDB)
 // Temporary video storage + persistent result storage for analysis pipeline.
-// Videos: stored as Blobs, keyed by session ID. Deleted after analysis.
-// Results: stored as JSON, keyed by result ID. Persist across page refreshes.
+// Videos: stored as ArrayBuffers (iOS Safari does not reliably persist File/Blob),
+// keyed by session ID. Results: stored as JSON, keyed by result ID.
 
 const DB_NAME = 'pedigrowth_video_store';
 const DB_VERSION = 2; // v2: adds 'results' store
@@ -27,25 +27,50 @@ function openDB(): Promise<IDBDatabase> {
   });
 }
 
+function toPlayableBlob(entry: {
+  blob?: Blob;
+  buffer?: ArrayBuffer;
+  type?: string;
+} | null): Blob | null {
+  if (!entry) return null;
+
+  const type = entry.type || 'video/mp4';
+
+  if (entry.blob instanceof Blob && entry.blob.size > 0) {
+    // Clone so iOS Safari can create a usable object URL after navigation.
+    return entry.blob.slice(0, entry.blob.size, entry.blob.type || type);
+  }
+
+  if (entry.buffer instanceof ArrayBuffer && entry.buffer.byteLength > 0) {
+    return new Blob([entry.buffer], { type });
+  }
+
+  return null;
+}
+
 // ── Video Storage ──
 
 /**
  * Store a video file in IndexedDB.
  * Returns the key used for retrieval.
  */
-export async function storeVideo(sessionId: string, file: File): Promise<string> {
+export async function storeVideo(sessionId: string, file: File | Blob): Promise<string> {
   const db = await openDB();
   const key = `video_${sessionId}`;
+  const type = file.type || 'video/mp4';
+  const name = file instanceof File && file.name ? file.name : 'capture.mp4';
+  const size = file.size;
+  const buffer = await file.arrayBuffer();
 
   return new Promise((resolve, reject) => {
     const tx = db.transaction(VIDEO_STORE, 'readwrite');
     const store = tx.objectStore(VIDEO_STORE);
 
     store.put({
-      blob: file,
-      name: file.name,
-      type: file.type,
-      size: file.size,
+      buffer,
+      name,
+      type,
+      size,
       storedAt: Date.now(),
     }, key);
 
@@ -74,7 +99,24 @@ export async function getVideo(sessionId: string): Promise<{ blob: Blob; name: s
 
     request.onsuccess = () => {
       db.close();
-      resolve(request.result || null);
+      const entry = request.result as {
+        blob?: Blob;
+        buffer?: ArrayBuffer;
+        name?: string;
+        type?: string;
+        size?: number;
+      } | undefined;
+      const blob = toPlayableBlob(entry ?? null);
+      if (!blob) {
+        resolve(null);
+        return;
+      }
+      resolve({
+        blob,
+        name: entry?.name || 'capture.mp4',
+        type: entry?.type || blob.type || 'video/mp4',
+        size: entry?.size ?? blob.size,
+      });
     };
     request.onerror = () => {
       db.close();

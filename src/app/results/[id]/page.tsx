@@ -434,8 +434,9 @@ export default function ResultsPage() {
       return;
     }
 
+    const fallbackUrl = resolveFallbackVideoUrl(result);
     if (result.run.classification !== "real_analysis") {
-      setVideoUrl(resolveFallbackVideoUrl(result));
+      setVideoUrl(fallbackUrl);
       return;
     }
 
@@ -447,7 +448,7 @@ export default function ResultsPage() {
       })();
 
     if (!sessionId) {
-      setVideoUrl(resolveFallbackVideoUrl(result));
+      setVideoUrl(fallbackUrl);
       return;
     }
 
@@ -456,14 +457,14 @@ export default function ResultsPage() {
       .then(({ getVideo }) => getVideo(sessionId))
       .then((videoData) => {
         if (!videoData?.blob) {
-          setVideoUrl(resolveFallbackVideoUrl(result));
+          setVideoUrl(fallbackUrl);
           return;
         }
         objectUrl = URL.createObjectURL(videoData.blob);
         setVideoUrl(objectUrl);
       })
       .catch(() => {
-        setVideoUrl(resolveFallbackVideoUrl(result));
+        setVideoUrl(fallbackUrl);
       });
 
     return () => {
@@ -1389,10 +1390,10 @@ export default function ResultsPage() {
               <div className="text-center py-12 space-y-3">
                 <Video className="h-10 w-10 text-muted-foreground/40 mx-auto" />
                 <p className="text-sm text-muted-foreground">
-                  The original video is no longer available in local storage.
+                  This clip is not available on this device yet.
                 </p>
                 <p className="text-xs text-muted-foreground/60">
-                  Record a new clip if you want an updated annotated playback.
+                  Analyze the video again so it can be saved for playback on phone and desktop.
                 </p>
               </div>
             ) : (

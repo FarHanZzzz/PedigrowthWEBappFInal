@@ -150,12 +150,14 @@ export function useResultViewModel(resultId: string): ResultViewModel {
     let active = true;
 
     async function loadVideo() {
+      const fallbackUrl =
+        resolvedResult.videoUrl ??
+        (resolvedResult.run.classification !== "real_analysis"
+          ? formatDemoVideoPath(resolvedResult.run.sourceClipFilename)
+          : null);
+
       if (resolvedResult.run.classification !== "real_analysis") {
-        if (resolvedResult.videoUrl) {
-          setVideoUrl(resolvedResult.videoUrl);
-          return;
-        }
-        setVideoUrl(formatDemoVideoPath(resolvedResult.run.sourceClipFilename));
+        if (active) setVideoUrl(fallbackUrl);
         return;
       }
 
@@ -167,7 +169,7 @@ export function useResultViewModel(resultId: string): ResultViewModel {
         })();
 
       if (!sessionId) {
-        setVideoUrl(resolvedResult.videoUrl ?? null);
+        if (active) setVideoUrl(fallbackUrl);
         return;
       }
 
@@ -175,14 +177,14 @@ export function useResultViewModel(resultId: string): ResultViewModel {
         const { getVideo } = await import("@/lib/session/videoStore");
         const videoData = await getVideo(sessionId);
         if (!videoData?.blob) {
-          if (active) setVideoUrl(resolvedResult.videoUrl ?? null);
+          if (active) setVideoUrl(fallbackUrl);
           return;
         }
 
         objectUrl = URL.createObjectURL(videoData.blob);
         if (active) setVideoUrl(objectUrl);
       } catch {
-        if (active) setVideoUrl(resolvedResult.videoUrl ?? null);
+        if (active) setVideoUrl(fallbackUrl);
       }
     }
 

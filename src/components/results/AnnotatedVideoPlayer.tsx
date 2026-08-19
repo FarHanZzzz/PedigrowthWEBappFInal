@@ -343,6 +343,7 @@ export default function AnnotatedVideoPlayer({
           muted
           playsInline
           preload="auto"
+          crossOrigin={videoUrl.startsWith("blob:") ? undefined : "anonymous"}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
         />

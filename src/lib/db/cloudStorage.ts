@@ -7,6 +7,43 @@ export interface CloudResultRecord {
   updated_at: string | null;
 }
 
+const VIDEO_BUCKET = "hackathon_videos";
+const MAX_CLOUD_VIDEO_BYTES = 50 * 1024 * 1024;
+
+function sanitizeStorageName(filename: string): string {
+  const trimmed = filename.trim().replace(/[^a-zA-Z0-9._-]+/g, "_");
+  return trimmed.length > 0 ? trimmed.slice(-80) : "clip.mp4";
+}
+
+export async function uploadVideoToCloud(
+  resultId: string,
+  blob: Blob,
+  filename = "clip.mp4",
+): Promise<string | null> {
+  if (!blob || blob.size === 0 || blob.size > MAX_CLOUD_VIDEO_BYTES) {
+    return null;
+  }
+
+  const supabase = createClient();
+  const safeName = sanitizeStorageName(filename);
+  const path = `${resultId}/${safeName}`;
+  const contentType = blob.type || "video/mp4";
+
+  const { error } = await supabase.storage.from(VIDEO_BUCKET).upload(path, blob, {
+    contentType,
+    upsert: true,
+    cacheControl: "3600",
+  });
+
+  if (error) {
+    console.error("Error uploading video to cloud:", error);
+    return null;
+  }
+
+  const { data } = supabase.storage.from(VIDEO_BUCKET).getPublicUrl(path);
+  return data.publicUrl || null;
+}
+
 export async function fetchResultFromCloud(resultId: string): Promise<Record<string, unknown> | null> {
   const supabase = createClient();
   
