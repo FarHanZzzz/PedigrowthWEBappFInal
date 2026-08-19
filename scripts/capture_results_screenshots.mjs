@@ -128,7 +128,7 @@ function buildSeedResult(resultId, sessionId) {
       strideRegularity: { value: 0.13, confidence: 0.78 },
       lateralTrunkSway: { value: 0.07, confidence: 0.76 },
       pathDeviation: { value: 0.08, confidence: 0.74 },
-      baseOfSupport: { value: 0.15, confidence: 0.71, unit: "normalized" },
+      baseOfSupport: { value: 0.15, confidence: 0.71, unit: "hip-widths" },
     },
     concerns: {
       asymmetry: "mild",

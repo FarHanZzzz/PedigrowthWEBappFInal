@@ -7,7 +7,7 @@
 //
 // Three modes:
 //   full_assessment  → standard analysis, full confidence
-//   best_effort      → reduced confidence, fragile metrics suppressed
+//   best_effort      → reduced confidence, all metrics still computed
 //   cannot_assess    → no analysis possible, explain why, offer retry
 
 import { createPoseProvider, extractLandmarkSequence } from '@/lib/pose';
@@ -24,6 +24,8 @@ import {
   type LandmarkFrame as BackendLandmarkFrame,
   type XGBoostPrediction,
 } from '@/lib/api/gaitPredictClient';
+import { pediatricModelPriors } from '@/lib/api/pediatricPriors';
+import { readPredictionProbability } from '@/lib/api/xgboostPredictions';
 import { POSE } from '@/lib/pose/poseTypes';
 import { getVideo } from './videoStore';
 import { buildAnalysisTrace } from '@/lib/trace/buildAnalysisTrace';
@@ -226,9 +228,9 @@ const METRIC_COMPUTATION_METHODS: Record<string, string> = {
   stepSymmetry: 'min(leftMean, rightMean) / max(leftMean, rightMean)',
   frontalAsymmetry: 'Weighted average of hip height score (60%) and shoulder tilt score (40%)',
   strideRegularity: 'sqrt(variance(intervals)) / mean(intervals)',
-  lateralTrunkSway: 'sqrt(variance(lateralOffsets)) normalized to 0-1 scale',
-  pathDeviation: 'Linear regression residual SD of hip-center X over time',
-  baseOfSupport: 'Mean absolute X-distance between left and right ankles',
+  lateralTrunkSway: 'SD of (shoulder-hip X offset / hip width), then scaled 0-1',
+  pathDeviation: 'Residual SD of (hip-center X minus image center) / hip width',
+  baseOfSupport: 'Mean ankle X-distance divided by hip width',
 };
 
 export async function runAnalysisPipeline(
@@ -478,9 +480,7 @@ export async function runAnalysisPipeline(
               predictions: null,
             };
           } else {
-            const backendResult = await predictFromLandmarks(backendFrames, {
-              Age: Math.max(1, Math.round(ageMonths / 12)),
-            });
+            const backendResult = await predictFromLandmarks(backendFrames, pediatricModelPriors(ageMonths));
 
             if (backendResult?.success && backendResult.predictions) {
               backendInference = {
@@ -1047,7 +1047,9 @@ function computeInferenceDecision(
   backendInference: BackendInference,
 ): InferenceDecision {
   const clientConcernProbability = concernLevelToProbability(concerns.overallLevel);
-  const backendCompositeProbability = backendInference.predictions?.composite_risk?.probability ?? null;
+  const backendCompositeProbability = readPredictionProbability(
+    backendInference.predictions?.composite_risk,
+  );
 
   if (backendInference.available && backendCompositeProbability !== null) {
     const fusedCompositeProbability = clamp(

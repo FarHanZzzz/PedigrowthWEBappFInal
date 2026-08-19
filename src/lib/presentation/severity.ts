@@ -34,10 +34,10 @@ export const CONCERN_PREFIX: Record<ConcernLevel, string> = {
 };
 
 export const CONCERN_BADGE_STYLES: Record<ConcernLevel, string> = {
-  none: "border-emerald-300/60 bg-gradient-to-r from-emerald-50 to-emerald-100/50 text-emerald-800 shadow-sm shadow-emerald-100/50",
-  mild: "border-amber-300/60 bg-gradient-to-r from-amber-50 to-amber-100/50 text-amber-900 shadow-sm shadow-amber-100/50",
-  moderate: "border-orange-300/60 bg-gradient-to-r from-orange-50 to-orange-100/50 text-orange-900 shadow-sm shadow-orange-100/50",
-  significant: "border-red-300/60 bg-gradient-to-r from-red-50 to-red-100/50 text-red-900 shadow-sm shadow-red-100/50",
+  none: "border-emerald-300/70 bg-emerald-50 text-emerald-800 dark:border-emerald-500/40 dark:bg-emerald-950/50 dark:text-emerald-200",
+  mild: "border-amber-300/70 bg-amber-50 text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/50 dark:text-amber-200",
+  moderate: "border-orange-300/70 bg-orange-50 text-orange-900 dark:border-orange-500/40 dark:bg-orange-950/50 dark:text-orange-200",
+  significant: "border-red-300/70 bg-red-50 text-red-800 dark:border-red-500/40 dark:bg-red-950/50 dark:text-red-200",
 };
 
 export const FOLLOWUP_LABELS: Record<FollowupPriority, string> = {
@@ -53,15 +53,15 @@ export const FOLLOWUP_SHORT_LABELS: Record<FollowupPriority, string> = {
 };
 
 export const FOLLOWUP_BADGE_STYLES: Record<FollowupPriority, string> = {
-  routine: "border-emerald-300/60 bg-gradient-to-r from-emerald-50 to-emerald-100/50 text-emerald-800 shadow-sm shadow-emerald-100/50",
-  earlier_review: "border-orange-300/60 bg-gradient-to-r from-orange-50 to-orange-100/50 text-orange-900 shadow-sm shadow-orange-100/50",
-  specialist: "border-red-300/60 bg-gradient-to-r from-red-50 to-red-100/50 text-red-900 shadow-sm shadow-red-100/50",
+  routine: "border-emerald-300/70 bg-emerald-50 text-emerald-800 dark:border-emerald-500/40 dark:bg-emerald-950/50 dark:text-emerald-200",
+  earlier_review: "border-orange-300/70 bg-orange-50 text-orange-900 dark:border-orange-500/40 dark:bg-orange-950/50 dark:text-orange-200",
+  specialist: "border-red-300/70 bg-red-50 text-red-800 dark:border-red-500/40 dark:bg-red-950/50 dark:text-red-200",
 };
 
 export const FOLLOWUP_CALLOUT_STYLES: Record<FollowupPriority, string> = {
-  routine: "border-emerald-200/60 bg-gradient-to-br from-emerald-50/80 to-emerald-100/40 text-emerald-900 shadow-sm shadow-emerald-100/50",
-  earlier_review: "border-orange-300/60 bg-gradient-to-br from-orange-50/80 to-orange-100/40 text-orange-900 shadow-sm shadow-orange-100/50",
-  specialist: "border-red-300/60 bg-gradient-to-br from-red-50/80 to-red-100/40 text-red-900 shadow-sm shadow-red-100/50",
+  routine: "border-emerald-200 bg-emerald-50/80 text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-950/40 dark:text-emerald-100",
+  earlier_review: "border-orange-300 bg-orange-50/80 text-orange-900 dark:border-orange-500/30 dark:bg-orange-950/40 dark:text-orange-100",
+  specialist: "border-red-300 bg-red-50/80 text-red-900 dark:border-red-500/30 dark:bg-red-950/40 dark:text-red-100",
 };
 
 export const FOLLOWUP_CALLOUT_TEXT: Record<FollowupPriority, string> = {
@@ -78,7 +78,7 @@ export const CONCERN_HEX_COLORS: Record<ConcernLevel, string> = {
 };
 
 export const RUN_TONE_BADGE_STYLES: Record<"success" | "warning" | "destructive", string> = {
-  success: "border-emerald-300 bg-emerald-50 text-emerald-800",
-  warning: "border-amber-300 bg-amber-50 text-amber-900",
+  success: "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-500/40 dark:bg-emerald-950/50 dark:text-emerald-200",
+  warning: "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/50 dark:text-amber-200",
   destructive: "border-red-300 bg-error-container text-on-error-container",
 };

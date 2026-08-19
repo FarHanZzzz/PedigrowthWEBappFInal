@@ -37,7 +37,7 @@ export function goodFrontalFixture(nickname: string, ageMonths: number): DemoFix
       strideRegularity: { value: 0.08, confidence: 0.76 },
       lateralTrunkSway: { value: 0.04, confidence: 0.82 },
       pathDeviation: { value: 0.05, confidence: 0.74 },
-      baseOfSupport: { value: 0.12, confidence: 0.70, unit: 'normalized' },
+      baseOfSupport: { value: 0.12, confidence: 0.70, unit: 'hip-widths' },
     },
     concerns: {
       asymmetry: 'none',
@@ -94,7 +94,7 @@ export function asymmetryFrontalFixture(nickname: string, ageMonths: number): De
       strideRegularity: { value: 0.12, confidence: 0.68 },
       lateralTrunkSway: { value: 0.11, confidence: 0.76 },
       pathDeviation: { value: 0.08, confidence: 0.65 },
-      baseOfSupport: { value: 0.10, confidence: 0.62, unit: 'normalized' },
+      baseOfSupport: { value: 0.10, confidence: 0.62, unit: 'hip-widths' },
     },
     concerns: {
       asymmetry: 'mild',

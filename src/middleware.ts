@@ -4,6 +4,7 @@ import {
   canAccessClinicianPortal,
   canAccessParentPortal,
   dashboardPath,
+  isAdminEmail,
   normalizeRole,
   roleFromPath,
 } from "@/lib/auth/roles";
@@ -20,6 +21,11 @@ const PUBLIC_PREFIXES = [
 function isPublicPath(pathname: string): boolean {
   if (pathname === "/") return true;
   return PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
+
+function resolvedRole(user: { email?: string | null; user_metadata?: { role?: unknown } }): ReturnType<typeof normalizeRole> {
+  if (isAdminEmail(user.email)) return "admin";
+  return normalizeRole(user.user_metadata?.role);
 }
 
 export async function middleware(request: NextRequest) {
@@ -40,7 +46,7 @@ export async function middleware(request: NextRequest) {
     }
 
     if (user && (pathname === "/" || pathname === "/login" || pathname === "/clinician")) {
-      const role = normalizeRole(user.user_metadata?.role);
+      const role = resolvedRole(user);
       const url = request.nextUrl.clone();
       const next = request.nextUrl.searchParams.get("next");
       const preferred = roleFromPath(next ?? pathname);
@@ -49,14 +55,28 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    if (user && pathname.startsWith("/portal/clinician") && !canAccessClinicianPortal(user.user_metadata?.role)) {
+    const role = user ? resolvedRole(user) : null;
+
+    if (user && pathname.startsWith("/portal/clinician") && !canAccessClinicianPortal(role)) {
       const url = request.nextUrl.clone();
-      url.pathname = dashboardPath(user.user_metadata?.role);
+      url.pathname = dashboardPath(role);
+      return NextResponse.redirect(url);
+    }
+
+    if (user && /^\/results\/[^/]+\/clinician/.test(pathname) && !canAccessClinicianPortal(role)) {
+      const url = request.nextUrl.clone();
+      url.pathname = dashboardPath(role);
+      return NextResponse.redirect(url);
+    }
+
+    const familyResultMatch = pathname.match(/^\/results\/([^/]+)$/);
+    if (user && familyResultMatch && role === "clinician") {
+      const url = request.nextUrl.clone();
+      url.pathname = `/results/${familyResultMatch[1]}/clinician`;
       return NextResponse.redirect(url);
     }
 
     if (user && pathname.startsWith("/portal/admin")) {
-      const role = normalizeRole(user.user_metadata?.role);
       if (role !== "admin") {
         const url = request.nextUrl.clone();
         url.pathname = dashboardPath(role);
@@ -64,9 +84,9 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    if (user && pathname.startsWith("/portal/parent") && !canAccessParentPortal(user.user_metadata?.role)) {
+    if (user && pathname.startsWith("/portal/parent") && !canAccessParentPortal(role)) {
       const url = request.nextUrl.clone();
-      url.pathname = dashboardPath(user.user_metadata?.role);
+      url.pathname = dashboardPath(role);
       return NextResponse.redirect(url);
     }
 

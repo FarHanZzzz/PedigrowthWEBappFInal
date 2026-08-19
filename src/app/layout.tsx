@@ -32,6 +32,8 @@ export const viewport: Viewport = {
   ],
 };
 
+const THEME_BOOTSTRAP = `(function(){try{var stored=localStorage.getItem("theme");var systemDark=window.matchMedia("(prefers-color-scheme: dark)").matches;var dark=stored==="dark"||((stored==null||stored==="system")&&systemDark);document.documentElement.classList.toggle("dark",dark);document.documentElement.style.colorScheme=dark?"dark":"light";}catch(e){}})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -43,13 +45,11 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${manrope.variable} ${sourceSerif.variable}`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
+      </head>
       <body className="font-sans antialiased" suppressHydrationWarning>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
+        <ThemeProvider>
           <div className="clinical-shell">{children}</div>
         </ThemeProvider>
       </body>

@@ -143,7 +143,7 @@ export default function SharedPacketPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5 print:max-w-none">
+    <div className="w-full space-y-5 print:max-w-none">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-2">
           <div className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">

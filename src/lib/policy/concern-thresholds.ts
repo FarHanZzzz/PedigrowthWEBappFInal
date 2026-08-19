@@ -69,6 +69,25 @@ function hasAnyAtLevel(levels: ConcernLevel[], target: ConcernLevel): boolean {
 }
 
 /**
+ * Headline concern for the whole clip.
+ * A single noisy domain must not mark the entire video as significant.
+ * Significant overall requires a second domain at moderate or higher.
+ */
+export function aggregateOverallLevel(levels: ConcernLevel[]): ConcernLevel {
+  const ranked = [...levels].sort(
+    (a, b) => CONCERN_ORDER.indexOf(b) - CONCERN_ORDER.indexOf(a),
+  );
+  const top = ranked[0] ?? 'none';
+  const second = ranked[1] ?? 'none';
+
+  if (top === 'significant' && CONCERN_ORDER.indexOf(second) < CONCERN_ORDER.indexOf('moderate')) {
+    return 'moderate';
+  }
+
+  return top;
+}
+
+/**
  * Score frontal-valid concern domains from gait features.
  *
  * Rules:

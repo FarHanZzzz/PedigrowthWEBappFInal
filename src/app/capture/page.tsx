@@ -530,7 +530,7 @@ export default function CapturePage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-lg space-y-5">
+    <div className="page-task space-y-5">
       <JourneyStepper current={2} />
 
       <div className="text-center">
@@ -541,7 +541,7 @@ export default function CapturePage() {
           Front view, full body, 4–6 steps. Keep the phone still.
         </p>
         {validationMode && showDemoTools && (
-          <p className="mt-2 text-xs font-medium text-amber-700">
+          <p className="mt-2 text-xs font-medium text-amber-700 dark:text-amber-300">
             Validation mode is on. This run will fail loudly if analysis is not real.
           </p>
         )}
@@ -567,8 +567,8 @@ export default function CapturePage() {
             <Card
               className={
                 approvedHeroClip
-                  ? "border-green-200 bg-green-50/70"
-                  : "border-amber-200 bg-amber-50/70"
+                  ? "border-green-200 bg-green-50/70 dark:border-green-500/40 dark:bg-green-950/40"
+                  : "border-amber-200 bg-amber-50/70 dark:border-amber-500/40 dark:bg-amber-950/50"
               }
             >
               <CardContent className="p-4">
@@ -576,7 +576,7 @@ export default function CapturePage() {
                   {approvedHeroClip ? (
                     <Sparkles className="h-5 w-5 shrink-0 text-green-700 mt-0.5" />
                   ) : (
-                    <ShieldAlert className="h-5 w-5 shrink-0 text-amber-700 mt-0.5" />
+                    <ShieldAlert className="h-5 w-5 shrink-0 text-amber-700 mt-0.5 dark:text-amber-300" />
                   )}
                   <div className="space-y-2">
                     <div>
@@ -610,7 +610,7 @@ export default function CapturePage() {
                         )}
                       </Button>
                     ) : (
-                      <p className="text-[11px] text-amber-700">
+                      <p className="text-[11px] text-amber-700 dark:text-amber-300">
                         Demo lock is still blocked until {heroClip?.filename ?? "toward_good.mp4"} is added and approved.
                       </p>
                     )}
@@ -766,7 +766,7 @@ export default function CapturePage() {
                       {sourceType === "manifest_hero" ? "Approved hero clip" : "Uploaded clip"}
                     </span>
                     {approvedForDemo && (
-                      <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-medium text-green-700">
+                      <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-950/60 dark:text-green-200">
                         Approved for demo
                       </span>
                     )}
@@ -820,10 +820,10 @@ export default function CapturePage() {
                     <span
                       className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                         preflightResult?.overall === "pass"
-                          ? "bg-green-100 text-green-700"
+                          ? "bg-green-100 text-green-700 dark:bg-green-950/60 dark:text-green-200"
                           : preflightResult?.overall === "fail"
-                            ? "bg-rose-100 text-rose-700"
-                            : "bg-amber-100 text-amber-700"
+                            ? "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-200"
+                            : "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-200"
                       }`}
                     >
                       {preflightResult?.overall === "pass"

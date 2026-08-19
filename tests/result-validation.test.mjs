@@ -224,33 +224,35 @@ describe("Cross-Metric Consistency Logic", () => {
 });
 
 describe("Normalization Divisor Calibration", () => {
-  it("hip asymmetry divisor produces score ~0.14 for healthy mean hip sway", () => {
-    // Healthy hip Y-difference is ~0.005 (MediaPipe normalized coords)
-    const healthyHipDiff = 0.005;
+  it("hip asymmetry divisor produces a none/mild score for typical pelvic drop", () => {
+    // Body-relative: ~8% of hip width is common in typical gait
+    const healthyHipRatio = 0.08;
     const divisor = normativeRefs.frontalAsymmetry.components.hipHeightDifference.normalizationDivisor;
-    const score = Math.min(1, healthyHipDiff / divisor);
+    const score = Math.min(1, healthyHipRatio / divisor);
     assert.ok(score < 0.25, `Healthy hip score should be <0.25, got ${score.toFixed(3)}`);
     assert.ok(score > 0.05, `Healthy hip score should be >0.05, got ${score.toFixed(3)}`);
   });
 
-  it("hip asymmetry divisor produces score ~0.71 for pathological hip drop", () => {
-    // Pathological pelvic drop: ~0.025 in normalized coords
-    const pathologicalHipDiff = 0.025;
+  it("hip asymmetry divisor produces a significant score for a clear pelvic drop", () => {
+    // Body-relative: ~32% of hip width is a visible Trendelenburg-like drop
+    const pathologicalHipRatio = 0.32;
     const divisor = normativeRefs.frontalAsymmetry.components.hipHeightDifference.normalizationDivisor;
-    const score = Math.min(1, pathologicalHipDiff / divisor);
+    const score = Math.min(1, pathologicalHipRatio / divisor);
     assert.ok(score >= 0.5, `Pathological hip score should be >=0.5, got ${score.toFixed(3)}`);
     assert.ok(score <= 0.9, `Pathological hip score should be <=0.9, got ${score.toFixed(3)}`);
   });
 
   it("trunk sway divisor produces low score for normal sway", () => {
-    const normalSD = 0.005;
+    // SD of (shoulder-hip X offset / hip width) in a steady walk
+    const normalSD = 0.04;
     const divisor = normativeRefs.lateralTrunkSway.normalizationDivisor;
     const score = Math.min(1, normalSD / divisor);
     assert.ok(score < 0.3, `Normal trunk sway score should be <0.3, got ${score.toFixed(3)}`);
   });
 
   it("path deviation divisor produces low score for straight walking", () => {
-    const normalResidualSD = 0.005;
+    // Residual SD of centered hip X / hip width
+    const normalResidualSD = 0.03;
     const divisor = normativeRefs.pathDeviation.normalizationDivisor;
     const score = Math.min(1, normalResidualSD / divisor);
     assert.ok(score < 0.25, `Normal path deviation should be <0.25, got ${score.toFixed(3)}`);

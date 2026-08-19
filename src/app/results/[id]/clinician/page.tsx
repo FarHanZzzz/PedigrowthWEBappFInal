@@ -25,19 +25,15 @@ import KeyFrameGallery from "../../../../components/results/KeyFrameGallery";
 import AnalysisTracePanel from "@/components/results/AnalysisTracePanel";
 import HowAnalysisWorksPanel from "@/components/results/HowAnalysisWorksPanel";
 
-// ── Clinical assessment components (Motor Delay + GMFCS + GMA) ────
-import GMFCSCard from "@/components/clinical/GMFCSCard";
-import MotorDelayAssessmentSummary from "@/components/clinical/MotorDelayAssessmentSummary";
-import GMAAssessmentCard from "@/components/clinical/GMAAssessmentCard";
 import { readSession, writeResult } from "@/lib/session/sessionStorage";
 import { saveResultToCloud } from "@/lib/db/cloudStorage";
 import type { ClinicianFeedbackPayload } from "@/lib/session/analysisSession";
-import type { MotorDelayAssessment, GMAScreeningResult } from "@/lib/clinical/frameworks";
-import { isGMAApplicableByMonths } from "@/lib/clinical/frameworks";
+import type { MotorDelayAssessment } from "@/lib/clinical/frameworks";
 import {
   formatDomainLabel,
   useResultViewModel,
 } from "@/lib/results/resultViewModel";
+import { useAuthRole } from "@/lib/auth/useAuthRole";
 import {
   CONCERN_BADGE_STYLES,
   CONCERN_LABELS,
@@ -48,6 +44,7 @@ import {
   toConcernLevel,
   toFollowupPriority,
 } from "@/lib/presentation/severity";
+import { featureRoleLabel } from "@/lib/scoring/metricRoles";
 
 const CONCERN_DOMAINS = [
   { key: "asymmetry", label: "Asymmetry" },
@@ -92,6 +89,8 @@ export default function ClinicianResultPage() {
   const params = useParams();
   const router = useRouter();
   const resultId = params.id as string;
+  const role = useAuthRole();
+  const canOpenFamilyView = role === "admin";
   const noteStorageKey = `pedigrowth_clinician_note_${resultId}`;
   const legacyNoteStorageKey = `gaitbridge_clinician_note_${resultId}`;
 
@@ -126,20 +125,13 @@ export default function ClinicianResultPage() {
   // This data is persisted by the concern page when the parent completes
   // the motor milestone and AIMS checklists. It is read here for display.
   const [clinicalAssessmentData, setClinicalAssessmentData] = useState<ClinicalAssessmentData | null>(null);
-  // ── GMA Screening Result — read from session if parent completed GMA checklist ──
-  const [gmaResult, setGmaResult] = useState<GMAScreeningResult | null>(null);
 
   useEffect(() => {
-    // Read clinical assessment from session (set by concern/page.tsx)
     const session = readSession<{
       clinicalAssessment?: ClinicalAssessmentData;
-      gmaScreeningResult?: GMAScreeningResult;
     }>();
     if (session?.clinicalAssessment) {
       setClinicalAssessmentData(session.clinicalAssessment);
-    }
-    if (session?.gmaScreeningResult) {
-      setGmaResult(session.gmaScreeningResult);
     }
   }, []);
 
@@ -328,11 +320,6 @@ export default function ClinicianResultPage() {
   const isSupplementalMotorContext =
     supplementalMotorMetadata?.source === "supplemental" &&
     (!supplementalMotorMetadata.linkedResultId || supplementalMotorMetadata.linkedResultId === resultId);
-  const supplementalMotorTimestamp =
-    supplementalMotorMetadata?.completedAt ?? clinicalAssessmentData?.assessedAt ?? null;
-  const hasMotorContextData =
-    Boolean(clinicalAssessmentData?.motorDelayAssessment) ||
-    (clinicalAssessmentData?.redFlags?.length ?? 0) > 0;
 
   const packetTimestamp = result.analyzedAt ?? result.run.analyzedAt;
   const clipUsabilityLabel =
@@ -348,7 +335,7 @@ export default function ClinicianResultPage() {
       : "On-device only";
   const modelSourceDetail =
     inference?.source === "hybrid" && inference.backendAvailable
-      ? "60% backend model + 40% on-device scoring."
+      ? `60% backend model + 40% on-device scoring${inference.confidenceBand ? ` (${inference.confidenceBand} band)` : ""}.`
       : inference?.fallbackReason ?? "Client scoring only. The model server was not used for this clip.";
   const observedSummary =
     result.concerns.overallLevel === "none"
@@ -629,25 +616,27 @@ export default function ClinicianResultPage() {
 
   return (
     <div className="clinician-packet min-h-dvh bg-surface-container-low/50 pb-12">
-      <div className="clinician-packet__content mx-auto max-w-6xl space-y-4 px-4 py-6">
+      <div className="clinician-packet__content space-y-4">
 
-        <div className="space-y-2">
-          <div className="print-hidden inline-flex items-center rounded-xl border border-border/60 bg-surface-container-low p-1">
+        <div className="space-y-3">
+          {canOpenFamilyView && (
+          <div className="print-hidden inline-flex items-center rounded-xl border border-border/60 bg-muted/40 p-1">
             <button
               type="button"
               onClick={() => router.push(`/results/${resultId}`)}
               className="rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
-              Parent View
+              Family view
             </button>
             <button
               type="button"
-              className="rounded-lg bg-surface-container-lowest px-3 py-1.5 text-xs font-medium text-foreground shadow-sm"
+              className="rounded-lg bg-card px-3 py-1.5 text-xs font-medium text-foreground"
               aria-current="page"
             >
-              Clinician View
+              Clinician view
             </button>
           </div>
+          )}
 
           <h1 className="medical-title text-2xl font-semibold sm:text-3xl">Clinician packet</h1>
           <p className="text-sm text-muted-foreground">
@@ -762,10 +751,10 @@ export default function ClinicianResultPage() {
           )}
 
           {/* New Grid layout: Findings Left, Scales Right */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+          <div className="grid grid-cols-1 gap-6 items-start">
             
             {/* Left Col: Core Domain Findings */}
-            <div className="md:col-span-7 space-y-4">
+            <div className="space-y-4">
               <div>
                 <h3 className="flex items-center gap-2 text-sm font-semibold tracking-tight text-foreground/90">
                   <Stethoscope className="h-4 w-4 text-primary/80" />
@@ -791,7 +780,7 @@ export default function ClinicianResultPage() {
                           variant="outline"
                           className={`text-[12px] px-2.5 py-0.5 font-bold shadow-xs ${
                             isSuppressed
-                              ? "border-amber-300 bg-amber-50 text-amber-800"
+                              ? "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-500/40 dark:bg-amber-950/50 dark:text-amber-200"
                               : CONCERN_BADGE_STYLES[level]
                           }`}
                         >
@@ -819,100 +808,8 @@ export default function ClinicianResultPage() {
                 </div>
               </details>
             </div>
-
-            {/* Right Col: Scales */}
-            <div className="md:col-span-5 space-y-4">
-              <h3 className="text-sm font-semibold tracking-tight text-foreground/90 pb-1">Clinical Scales</h3>
-              
-              {false && hasMotorContextData && (
-                <Card className="print-section border-amber-300 bg-amber-50/60 shadow-sm">
-                  <CardContent className="p-3">
-                    <p className="text-xs text-amber-900/90 font-medium">
-                      {isSupplementalMotorContext
-                        ? "Supplemental Motor Milestone Context"
-                        : "Motor Milestone Context"}
-                    </p>
-                    <p className="mt-1 text-[11px] text-amber-900/80 leading-relaxed">
-                      {isSupplementalMotorContext
-                        ? "This motor screening was added after gait analysis and should be interpreted as supportive context."
-                        : "Motor screening context is available from the concern workflow."}
-                    </p>
-                    {supplementalMotorTimestamp && (
-                      <p className="mt-1.5 text-[10px] text-amber-900/60 uppercase tracking-wide">
-                        Captured: {supplementalMotorTimestamp ? new Date(supplementalMotorTimestamp!).toLocaleString() : ""}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* GMFCS */}
-              <div className="max-h-[600px] overflow-y-auto pr-1 pb-1 scrollbar-thin scrollbar-thumb-slate-200">
-                <GMFCSCard interactive={true} />
-              </div>
-
-              {/* GMA Assessment Card */}
-              {(() => {
-                const ageMonths = result.session.ageMonths ?? 0;
-                const gmaApplicable = isGMAApplicableByMonths(ageMonths);
-
-                if (!gmaApplicable) return null;
-
-                if (gmaResult) {
-                  return (
-                    <div className="space-y-1">
-                      <p className="px-1 text-[10px] font-bold uppercase tracking-widest text-violet-800/60 mb-2">
-                        Prechtl GMA Panel
-                      </p>
-                      <GMAAssessmentCard result={gmaResult} showInterpretation={true} />
-                    </div>
-                  );
-                }
-
-                return (
-                  <div className="rounded-xl border border-dashed border-violet-300 bg-violet-50/40 p-4 shadow-[inset_0_2px_4px_rgba(0,0,0,0.01)]">
-                    <p className="text-xs font-bold uppercase tracking-wider text-violet-900">
-                      Prechtl GMA Candidate
-                    </p>
-                    <p className="mt-2 text-[11px] leading-relaxed text-violet-800/80">
-                      Child is {ageMonths} months old. Assess parent observations via the Parent Portal to populate General Movements Assessment scoring here.
-                    </p>
-                  </div>
-                );
-              })()}
-
-              {/* Motor Delay Assessment */}
-              {false && clinicalAssessmentData?.motorDelayAssessment && (
-                <MotorDelayAssessmentSummary
-                  assessment={clinicalAssessmentData!.motorDelayAssessment!}
-                  ageMonths={result?.session?.ageMonths ?? 0}
-                  childName={result?.session?.nickname ?? "Child"}
-                />
-              )}
-            </div>
           </div>
 
-          {/* Red flags block */}
-          {clinicalAssessmentData?.redFlags && clinicalAssessmentData.redFlags.length > 0 && (
-            <div className="mt-4 rounded-xl border border-red-200 bg-red-50/40 p-4 shadow-sm">
-              <h3 className="flex items-center gap-2 text-sm font-semibold text-red-900">
-                <AlertTriangle className="h-4 w-4" />
-                {isSupplementalMotorContext
-                  ? "Supplemental Caregiver-Reported Red Flags"
-                  : "Caregiver-Reported Red Flags"}
-              </h3>
-              <ul className="mt-3 list-disc space-y-1.5 pl-5 text-xs leading-relaxed text-red-900/80">
-                {clinicalAssessmentData.redFlags.map((flag, index) => (
-                  <li key={index}>{flag}</li>
-                ))}
-              </ul>
-              {clinicalAssessmentData.assessedAt && (
-                <p className="mt-3 border-t border-red-200/50 pt-2 text-[10px] uppercase tracking-wide text-red-900/50">
-                  Assessed: {new Date(clinicalAssessmentData.assessedAt).toLocaleString()}
-                </p>
-              )}
-            </div>
-          )}
         </div>
 
         <Card className={`print-section print-hidden border-border/60 bg-card/60 shadow-sm backdrop-blur-sm transition-all duration-300 ${activeTab === "evidence" ? "" : "hidden"}`}>
@@ -943,13 +840,23 @@ export default function ClinicianResultPage() {
                   <div className="rounded-xl border border-border/60 bg-card/80 p-5 shadow-[inset_0_1px_4px_rgba(0,0,0,0.01)] backdrop-blur-sm transition-all duration-300 hover:shadow-md">
                     <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Measured movement signals</p>
                     <div className="mt-2 space-y-2.5">
-                      {Object.entries(result.features).map(([key, metric]) => (
+                      {Object.entries(result.features)
+                        .sort(([a], [b]) => {
+                          const rank = (key: string) => (featureRoleLabel(key) === "Scored" ? 0 : 1);
+                          return rank(a) - rank(b);
+                        })
+                        .map(([key, metric]) => (
                         <div
                           key={key}
                           className={`grid grid-cols-[1fr_auto] items-center gap-2 text-[13px] ${metric.suppressed ? "opacity-45" : ""}`}
                         >
                           <div>
-                            <p className="font-medium text-foreground/90">{formatDomainLabel(key)}</p>
+                            <p className="font-medium text-foreground/90">
+                              {formatDomainLabel(key)}
+                              <span className="ml-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                {featureRoleLabel(key)}
+                              </span>
+                            </p>
                             {metric.limitedReason && (
                               <p className="text-[11px] text-slate-400">{metric.limitedReason}</p>
                             )}
@@ -1031,9 +938,9 @@ export default function ClinicianResultPage() {
                           <span className="text-xs text-slate-400">(ratio: {lrRatio.toFixed(2)})</span>
                         )}
                         {p.lrTrackingStable ? (
-                          <Badge variant="outline" className="border-emerald-300 bg-emerald-50 bg-opacity-70 text-[10px] text-emerald-800 p-0.5 px-2">L/R Tracking Stable</Badge>
+                          <Badge variant="outline" className="border-emerald-300 bg-emerald-50 bg-opacity-70 text-[10px] text-emerald-800 p-0.5 px-2 dark:border-emerald-500/40 dark:bg-emerald-950/50 dark:text-emerald-200">L/R Tracking Stable</Badge>
                         ) : (
-                          <Badge variant="outline" className="border-amber-300 bg-amber-50 bg-opacity-70 text-[10px] text-amber-900 p-0.5 px-2">L/R Tracking Uncertain</Badge>
+                          <Badge variant="outline" className="border-amber-300 bg-amber-50 bg-opacity-70 text-[10px] text-amber-900 p-0.5 px-2 dark:border-amber-500/40 dark:bg-amber-950/50 dark:text-amber-200">L/R Tracking Uncertain</Badge>
                         )}
                       </div>
                     </div>

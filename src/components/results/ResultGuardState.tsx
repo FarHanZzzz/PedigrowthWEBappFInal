@@ -23,13 +23,13 @@ export default function ResultGuardState({ result }: Props) {
             <RunProvenanceBadge run={run} />
           </div>
 
-          <Card className="border-red-200 bg-red-50/70">
+          <Card className="border-red-200 bg-red-50/70 dark:border-red-500/40 dark:bg-red-950/40">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base text-red-900">
+              <CardTitle className="text-base text-red-900 dark:text-red-100">
                 Validation failed before analysis could complete
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm text-red-900/85">
+            <CardContent className="space-y-3 text-sm text-red-900/85 dark:text-red-100/85">
               <p>{run.failureReason ?? "The pipeline stopped before producing a trustworthy result."}</p>
               <div className="rounded-lg bg-card/70 p-3 text-xs">
                 <p><strong>Stage:</strong> {run.failureStage ?? "unknown"}</p>
@@ -37,7 +37,7 @@ export default function ResultGuardState({ result }: Props) {
                 <p><strong>Model:</strong> {run.modelLabel}</p>
                 <p><strong>Validation mode:</strong> {run.validationMode ? "on" : "off"}</p>
               </div>
-              <p className="text-xs text-red-800/80">
+              <p className="text-xs text-red-800/80 dark:text-red-200/80">
                 No fallback result was substituted. This is intentional so demo output never misrepresents a failed analysis.
               </p>
             </CardContent>
@@ -68,16 +68,16 @@ export default function ResultGuardState({ result }: Props) {
             <RunProvenanceBadge run={run} />
           </div>
 
-          <div className="rounded-xl border-2 border-red-200 bg-red-50 p-4">
+          <div className="rounded-xl border-2 border-red-200 bg-red-50 p-4 dark:border-red-500/40 dark:bg-red-950/40">
             <div className="flex gap-3">
-              <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600" />
+              <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600 dark:text-red-300" />
               <div>
-                <p className="text-sm font-semibold text-red-800">
+                <p className="text-sm font-semibold text-red-800 dark:text-red-100">
                   This clip could not be assessed safely
                 </p>
-                <p className="mt-1 text-xs text-red-700">{result.quality.confidenceNotes}</p>
+                <p className="mt-1 text-xs text-red-700 dark:text-red-200">{result.quality.confidenceNotes}</p>
                 {result.quality.failureReasons.map((reason, index) => (
-                  <p key={index} className="mt-1 text-xs text-red-600">• {reason}</p>
+                  <p key={index} className="mt-1 text-xs text-red-600 dark:text-red-300">• {reason}</p>
                 ))}
               </div>
             </div>

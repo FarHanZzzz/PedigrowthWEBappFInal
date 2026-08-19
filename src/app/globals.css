@@ -151,6 +151,17 @@
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
     font-weight: 450;
+    line-height: 1.6;
+    letter-spacing: 0.01em;
+  }
+
+  p {
+    line-height: 1.65;
+  }
+
+  h1, h2, h3 {
+    letter-spacing: -0.02em;
+    line-height: 1.25;
   }
 }
 
@@ -159,18 +170,31 @@
     @apply relative min-h-dvh overflow-x-clip;
   }
 
+  .page-frame {
+    @apply mx-auto w-full max-w-screen-2xl;
+  }
+
+  .page-task {
+    @apply mx-auto w-full max-w-xl lg:max-w-2xl;
+  }
+
+  .page-auth {
+    @apply mx-auto w-full max-w-md;
+  }
+
   .clinical-glass {
     background: color-mix(in oklch, var(--surface-bright) 82%, var(--background) 18%);
     backdrop-filter: blur(10px);
   }
 
   .medical-surface {
-    @apply rounded-2xl border border-border/70 bg-card shadow-[0_10px_28px_rgba(16,36,45,0.06)];
+    @apply rounded-2xl border border-border bg-card;
   }
 
   .medical-title {
     font-family: var(--font-display), ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
   }
 
   .touch-target {

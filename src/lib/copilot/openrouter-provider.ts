@@ -162,7 +162,7 @@ export async function generateExplanation(
   } catch (error) {
     clearTimeout(timeoutId);
 
-    if (error instanceof DOMException && error.name === 'AbortError') {
+    if (error instanceof Error && error.name === "AbortError") {
       throw new OpenRouterError('Request timed out after 25 seconds.', 'TIMEOUT');
     }
 

@@ -274,7 +274,7 @@ export default function ParentPortalPage() {
   }), [rows]);
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-6">
+    <div className="w-full space-y-6">
       <section className="medical-surface p-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -387,7 +387,7 @@ export default function ParentPortalPage() {
         </section>
 
         {/* GMA Early Motor Screening — age-gated, only for infants 0-5 months */}
-        {showGMA && (
+        {false && showGMA && (
           <section className="med-slide-up med-stagger-2">
             <Card className="border-violet-200 bg-violet-50/20 shadow-[0_12px_30px_rgba(14,31,41,0.07)]">
               <CardHeader className="border-b border-violet-100 pb-3">

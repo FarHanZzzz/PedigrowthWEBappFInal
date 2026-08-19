@@ -324,7 +324,7 @@ class GaitPredictor:
 
         for name in TARGET_NAMES:
             if name not in self.models:
-                results[name] = {'risk': False, 'confidence': 0.0}
+                results[name] = {'risk': False, 'confidence': 0.0, 'probability': 0.0}
                 continue
 
             model = self.models[name]
@@ -337,6 +337,7 @@ class GaitPredictor:
             results[name] = {
                 'risk': is_risk,
                 'confidence': round(confidence, 4),
+                'probability': round(confidence, 4),
             }
 
             if is_risk and name != 'composite_risk':

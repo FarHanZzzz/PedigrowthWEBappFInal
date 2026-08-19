@@ -35,18 +35,18 @@
     "source": "Wren et al. 2005 — frontal-plane gait analysis; Baker 2006 — pelvic obliquity norms",
     "components": {
       "hipHeightDifference": {
-        "description": "Absolute Y-difference between left and right hip in MediaPipe normalized coords",
-        "normativeSD": 0.008,
-        "note": "In MediaPipe coords (0-1 screen), typical pelvic obliquity during normal gait causes ~0.005-0.010 Y-difference. Values >0.025 suggest clinically relevant pelvic drop.",
-        "normalizationDivisor": 0.035,
-        "divisorJustification": "Set so that 2 SD above pathological mean (0.025 + 2*0.005 = 0.035) maps to score = 1.0"
+        "description": "Left-right hip Y difference divided by hip width, so walking toward the camera does not inflate the score",
+        "normativeSD": 0.08,
+        "note": "Healthy pelvic drop is typically well under 15% of hip width. Values above ~30% of hip width suggest a visible drop.",
+        "normalizationDivisor": 0.45,
+        "divisorJustification": "Score 1.0 at 45% of hip width. Keeps typical phone-camera pelvic drop in none/mild instead of always hitting significant."
       },
       "shoulderTilt": {
-        "description": "Absolute Y-difference between left and right shoulder in MediaPipe normalized coords",
-        "normativeSD": 0.012,
-        "note": "Shoulders show more natural variation than hips. Clinically significant trunk lean involves >0.04 in normalized coords.",
-        "normalizationDivisor": 0.06,
-        "divisorJustification": "Set so that moderate pathological shoulder tilt (0.06) maps to score = 1.0"
+        "description": "Left-right shoulder Y difference divided by shoulder width",
+        "normativeSD": 0.10,
+        "note": "Shoulders vary more than hips. Score stays body-relative so closer walkers are not penalized for looking larger on screen.",
+        "normalizationDivisor": 0.55,
+        "divisorJustification": "Score 1.0 at 55% of shoulder width."
       }
     },
     "compositeWeights": { "hip": 0.6, "shoulder": 0.4 },
@@ -73,8 +73,8 @@
       "mediolateralOffset": 0.006,
       "note": "SD of lateral shoulder-hip offset in normalized MediaPipe coords during normal gait is ~0.004-0.008"
     },
-    "normalizationDivisor": 0.025,
-    "divisorJustification": "Set so that clinically obvious lateral instability (~0.025 SD) maps to score = 1.0. Previous value (0.04) was too generous — children with moderate sway were scoring too low.",
+    "normalizationDivisor": 0.22,
+    "divisorJustification": "SD of (shoulder-hip X offset / hip width). Score 1.0 at 0.22. Screen-space 0.025 was too tight for toward-camera clips and flagged healthy walks as significant.",
     "note": "Measures mediolateral trunk stability. In frontal view, this is one of the most reliable metrics."
   },
 
@@ -85,8 +85,8 @@
       "healthy": 0.005,
       "note": "Residual SD from linear regression of hip-center X over time in MediaPipe normalized coords. Healthy walkers typically <0.008"
     },
-    "normalizationDivisor": 0.035,
-    "divisorJustification": "Set so that 3.5% of screen width deviation from a straight path maps to 1.0. Previous value (0.05) was too generous.",
+    "normalizationDivisor": 0.20,
+    "divisorJustification": "Residual SD of (hip-center X minus image center) / hip width. Centering is required so walking toward the camera does not look like a curved path.",
     "note": "Tracks how straight the walking path is. Ideal for frontal/away video."
   },
 

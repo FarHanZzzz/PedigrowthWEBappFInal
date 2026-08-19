@@ -4,4 +4,4 @@
 export { routeChild, AGE_THRESHOLD_MONTHS } from './routing-rules';
 export { checkLanguageSafety, getProhibitedPatterns } from './language-safety';
 export { evaluateQuality, QUALITY_THRESHOLDS } from './quality-thresholds';
-export { scoreConcerns, CONCERN_THRESHOLDS } from './concern-thresholds';
+export { scoreConcerns, CONCERN_THRESHOLDS, aggregateOverallLevel } from './concern-thresholds';

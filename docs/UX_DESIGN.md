@@ -51,8 +51,9 @@ Internal pipeline stages (pose init, landmarks, XGBoost) are **not** parent-faci
 - **Accent:** one clinical teal (`--primary`). No indigo/rainbow card chrome
 - **Surfaces:** warm off-white page, white cards, 16px radius, soft shadow
 - **Type scale:** display 32/28, title 22, body 16, meta 13–14. Avoid 10px uppercase labels
-- **Phone first:** 44px tap targets, bottom nav, parent column max-width 720px
-- **Clinician desktop:** max-width 1120px
+- **Phone first:** 44px tap targets, bottom nav
+- **Shared page frame:** header and content share `max-w-screen-2xl` (1536px) with the same horizontal padding, so laptop and desktop do not sit in a narrow phone column
+- **Task screens** (start, capture, analyzing, login) stay a centered form column so they do not stretch
 - **Safety copy:** one sentence on results, not a stamp on every header badge
 
 ## Shell

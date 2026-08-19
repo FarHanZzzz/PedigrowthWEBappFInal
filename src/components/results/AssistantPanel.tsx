@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import { MessageCircle, X, Loader2, AlertCircle, Sparkles, ListChecks, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 
 interface Message {
   id: string;
@@ -83,14 +82,21 @@ const DEFAULT_PROMPTS = [
   'Give me 3 questions for the clinician.',
 ];
 
-function severityBadgeClass(severity: 'low' | 'medium' | 'high'): string {
-  if (severity === 'high') return 'border-destructive/30 bg-destructive/10 text-destructive';
-  if (severity === 'medium') return 'border-amber-300/60 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200';
-  return 'border-primary/30 bg-primary/10 text-primary';
-}
+function MessageBody({ content }: { content: string }) {
+  const blocks = content
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean);
 
-function formatSeconds(timestampMs: number): string {
-  return `${(timestampMs / 1000).toFixed(1)}s`;
+  return (
+    <div className="space-y-3">
+      {blocks.map((block, index) => (
+        <p key={`${index}_${block.slice(0, 24)}`} className="whitespace-pre-wrap break-words leading-relaxed">
+          {block}
+        </p>
+      ))}
+    </div>
+  );
 }
 
 function makeId(): string {
@@ -156,9 +162,7 @@ export default function AssistantPanel({
   metrics,
   risk_category,
   context,
-  issueHotspots = [],
   isOpen = false,
-  onFocusIssue,
   onToggle,
 }: AssistantPanelProps) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -225,11 +229,7 @@ export default function AssistantPanel({
       quality_result: context?.quality_result ?? '',
       assessed_domains: context?.assessed_domains ?? [],
       retake_suggestions: context?.retake_suggestions ?? [],
-      issue_hotspots: issueHotspots.map((spot) => ({
-        id: spot.id,
-        frameIndex: spot.frameIndex,
-        severity: spot.severity,
-      })),
+      issue_hotspots: [],
     });
 
     const cacheKey = `${mode}:${userMessage.content}:${JSON.stringify(metrics ?? {})}:${risk_category ?? ''}:${shortHistoryKey}:${contextSignature}`;
@@ -280,18 +280,7 @@ export default function AssistantPanel({
           thread_id: threadId,
           context: {
             ...(context ?? {}),
-            issue_hotspots:
-              issueHotspots.length > 0
-                ? issueHotspots.map((spot) => ({
-                    id: spot.id,
-                    title: spot.title,
-                    description: spot.description,
-                    domain: spot.domain,
-                    severity: spot.severity,
-                    frame_index: spot.frameIndex,
-                    timestamp_ms: spot.timestampMs,
-                  }))
-                : context?.issue_hotspots ?? [],
+            issue_hotspots: [],
           },
           conversation: messages.slice(-8).map((msg) => ({ role: msg.role, content: msg.content })),
         }),
@@ -471,13 +460,13 @@ export default function AssistantPanel({
             {messages.map((msg, idx) => (
               <div key={`${msg.id}_${idx}`} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div
-                  className={`max-w-[88%] whitespace-pre-wrap break-words rounded-2xl px-3 py-2.5 text-sm leading-relaxed ${
+                  className={`max-w-[88%] rounded-2xl px-3.5 py-3 text-sm ${
                     msg.role === 'user'
                       ? 'rounded-br-md bg-primary text-primary-foreground'
                       : 'rounded-bl-md bg-muted text-foreground'
                   }`}
                 >
-                  {msg.content}
+                  <MessageBody content={msg.content} />
                 </div>
               </div>
             ))}
@@ -498,37 +487,11 @@ export default function AssistantPanel({
               <ListChecks className="h-4 w-4 text-primary" />
               Suggested this week
             </div>
-            <ul className="space-y-1 text-xs text-muted-foreground">
+            <ul className="space-y-2 text-xs leading-relaxed text-muted-foreground">
               {actionItems.map((item) => (
-                <li key={item}>• {item}</li>
+                <li key={item}>{item}</li>
               ))}
             </ul>
-          </div>
-        )}
-
-        {issueHotspots.length > 0 && (
-          <div className="mt-4 rounded-xl border border-border p-3">
-            <p className="mb-2 text-xs font-semibold">Moments in the video</p>
-            <div className="space-y-2">
-              {issueHotspots.slice(0, 5).map((spot) => (
-                <button
-                  key={spot.id}
-                  type="button"
-                  onClick={() => onFocusIssue?.(spot.frameIndex)}
-                  className="w-full rounded-xl border border-border bg-background px-2.5 py-2 text-left text-xs hover:border-primary/40"
-                  disabled={!onFocusIssue}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium">{spot.title}</span>
-                    <span className="text-[11px] text-muted-foreground">{formatSeconds(spot.timestampMs)}</span>
-                  </div>
-                  <p className="mt-1 text-muted-foreground">{spot.description}</p>
-                  <Badge variant="outline" className={`mt-2 text-[10px] ${severityBadgeClass(spot.severity)}`}>
-                    {spot.severity}
-                  </Badge>
-                </button>
-              ))}
-            </div>
           </div>
         )}
       </div>

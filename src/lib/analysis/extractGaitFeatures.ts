@@ -12,14 +12,21 @@ import { computeAngle, computeLateralOffset, computeHipHeightDiff, computeShould
 import { detectFootStrikes, computeStepIntervals } from './cycleDetection';
 import normativeRefs from '@/lib/policy/normative-references.json';
 
-const POLICY_VERSION = '0.4.0-calibrated';
+const POLICY_VERSION = '0.5.0-body-relative';
 
 // ── Clinically-anchored normalization constants ────────────────
 // Each constant traces to an entry in normative-references.json.
-const HIP_ASYM_DIVISOR = normativeRefs.frontalAsymmetry.components.hipHeightDifference.normalizationDivisor; // 0.035
-const SHOULDER_TILT_DIVISOR = normativeRefs.frontalAsymmetry.components.shoulderTilt.normalizationDivisor; // 0.06
-const TRUNK_SWAY_DIVISOR = normativeRefs.lateralTrunkSway.normalizationDivisor; // 0.025
-const PATH_DEV_DIVISOR = normativeRefs.pathDeviation.normalizationDivisor; // 0.035
+const HIP_ASYM_DIVISOR = normativeRefs.frontalAsymmetry.components.hipHeightDifference.normalizationDivisor;
+const SHOULDER_TILT_DIVISOR = normativeRefs.frontalAsymmetry.components.shoulderTilt.normalizationDivisor;
+const TRUNK_SWAY_DIVISOR = normativeRefs.lateralTrunkSway.normalizationDivisor;
+const PATH_DEV_DIVISOR = normativeRefs.pathDeviation.normalizationDivisor;
+const MIN_BODY_SCALE = 0.02;
+
+function bodyScale(left: { x: number; y: number }, right: { x: number; y: number }): number | null {
+  const width = Math.hypot(left.x - right.x, left.y - right.y);
+  if (width < MIN_BODY_SCALE) return null;
+  return width;
+}
 
 /**
  * Extract gait features from smoothed landmark frames.
@@ -131,13 +138,12 @@ function computeStepTimingSymmetry(leftIntervals: number[], rightIntervals: numb
 /**
  * Frontal asymmetry: multi-signal L/R comparison.
  *
- * Uses THREE frontal-valid signals:
+ * Uses two frontal-valid visual signals:
  * 1. Hip height asymmetry (pelvic drop)
- * 2. Step timing asymmetry (from step intervals)
- * 3. Shoulder tilt (trunk lean toward one side)
+ * 2. Shoulder tilt (trunk lean toward one side)
  *
- * Each normalized 0-1, then averaged. This is BETTER from frontal view
- * than the old sagittal knee-angle-based asymmetry.
+ * Step timing is a separate metric (stepTimingSymmetry) and only
+ * corroborates or down-weights this score later in scoreConcerns.
  */
 function computeFrontalAsymmetry(frames: LandmarkFrame[]): MetricValue {
   const hipDiffs: number[] = [];
@@ -153,10 +159,16 @@ function computeFrontalAsymmetry(frames: LandmarkFrame[]): MetricValue {
     const shouldersVisible = lShoulder.visibility >= MIN_VISIBILITY && rShoulder.visibility >= MIN_VISIBILITY;
 
     if (hipsVisible) {
-      hipDiffs.push(computeHipHeightDiff(lHip, rHip));
+      const scale = bodyScale(lHip, rHip);
+      if (scale) {
+        hipDiffs.push(computeHipHeightDiff(lHip, rHip) / scale);
+      }
     }
     if (shouldersVisible) {
-      shoulderTilts.push(computeShoulderTilt(lShoulder, rShoulder));
+      const scale = bodyScale(lShoulder, rShoulder);
+      if (scale) {
+        shoulderTilts.push(computeShoulderTilt(lShoulder, rShoulder) / scale);
+      }
     }
   }
 
@@ -164,9 +176,8 @@ function computeFrontalAsymmetry(frames: LandmarkFrame[]): MetricValue {
     return { value: 0, confidence: 0.1, limitedReason: 'Insufficient visible frames for asymmetry' };
   }
 
-  // Normalize using clinically-derived divisors.
-  // HIP_ASYM_DIVISOR (0.035): 2 SD above pathological mean pelvic drop → score 1.0
-  // SHOULDER_TILT_DIVISOR (0.06): moderate pathological trunk lean → score 1.0
+  // Ratios are body-relative (diff / hip or shoulder width) so walking toward
+  // the camera does not inflate concern just because the child looks bigger.
   const hipScore = hipDiffs.length >= 5
     ? Math.min(1, mean(hipDiffs) / HIP_ASYM_DIVISOR)
     : 0;
@@ -239,7 +250,9 @@ function computeLateralTrunkSway(frames: LandmarkFrame[]): MetricValue {
         rs.visibility >= MIN_VISIBILITY &&
         lh.visibility >= MIN_VISIBILITY &&
         rh.visibility >= MIN_VISIBILITY) {
-      lateralOffsets.push(computeLateralOffset(ls, rs, lh, rh));
+      const scale = bodyScale(lh, rh);
+      if (!scale) continue;
+      lateralOffsets.push(computeLateralOffset(ls, rs, lh, rh) / scale);
     }
   }
 
@@ -250,10 +263,6 @@ function computeLateralTrunkSway(frames: LandmarkFrame[]): MetricValue {
   const avg = mean(lateralOffsets);
   const variance = mean(lateralOffsets.map((l) => (l - avg) ** 2));
   const sd = Math.sqrt(variance);
-
-  // Normalize using clinically-derived divisor.
-  // TRUNK_SWAY_DIVISOR (0.025): Menz et al. 2003 — clinically obvious lateral
-  // instability at ~0.025 SD in normalized coords.
   const normalized = Math.min(1, sd / TRUNK_SWAY_DIVISOR);
   // Require ≥30 observations for reasonable confidence
   const confidence = Math.min(0.85, lateralOffsets.length / 30);
@@ -277,8 +286,12 @@ function computePathDeviation(frames: LandmarkFrame[]): MetricValue {
     const rh = frame.landmarks[POSE.RIGHT_HIP];
 
     if (lh.visibility >= MIN_VISIBILITY && rh.visibility >= MIN_VISIBILITY) {
+      const scale = bodyScale(lh, rh);
+      if (!scale) continue;
       const hipMid = midpoint(lh, rh);
-      xPositions.push({ t: frame.timestampMs, x: hipMid.x });
+      // Center on the image, then divide by hip width. Using raw x/scale
+      // explodes as the child walks toward the camera (0.5 / shrinking-distance).
+      xPositions.push({ t: frame.timestampMs, x: (hipMid.x - 0.5) / scale });
     }
   }
 
@@ -309,10 +322,6 @@ function computePathDeviation(frames: LandmarkFrame[]): MetricValue {
   // Compute residuals (deviation from straight line)
   const residuals = normalizedT.map((t, i) => xs[i] - (slope * t + intercept));
   const residualSD = Math.sqrt(mean(residuals.map((r) => r * r)));
-
-  // Normalize using clinically-derived divisor.
-  // PATH_DEV_DIVISOR (0.035): 3.5% of screen width deviation → 1.0 score.
-  // Hausdorff 2005: healthy walkers typically <0.008 residual SD.
   const normalized = Math.min(1, residualSD / PATH_DEV_DIVISOR);
   // Require ≥25 data points for reasonable confidence
   const confidence = Math.min(0.85, xPositions.length / 25);
@@ -332,10 +341,18 @@ function computeBaseOfSupport(frames: LandmarkFrame[]): MetricValue {
   for (const frame of frames) {
     const la = frame.landmarks[POSE.LEFT_ANKLE];
     const ra = frame.landmarks[POSE.RIGHT_ANKLE];
+    const lh = frame.landmarks[POSE.LEFT_HIP];
+    const rh = frame.landmarks[POSE.RIGHT_HIP];
 
-    if (la.visibility >= MIN_VISIBILITY && ra.visibility >= MIN_VISIBILITY) {
-      // X-distance between ankles (normalized coords)
-      ankleWidths.push(Math.abs(la.x - ra.x));
+    if (
+      la.visibility >= MIN_VISIBILITY &&
+      ra.visibility >= MIN_VISIBILITY &&
+      lh.visibility >= MIN_VISIBILITY &&
+      rh.visibility >= MIN_VISIBILITY
+    ) {
+      const scale = bodyScale(lh, rh);
+      if (!scale) continue;
+      ankleWidths.push(Math.abs(la.x - ra.x) / scale);
     }
   }
 
@@ -343,18 +360,13 @@ function computeBaseOfSupport(frames: LandmarkFrame[]): MetricValue {
     return { value: 0, confidence: 0.15, limitedReason: 'Insufficient ankle visibility' };
   }
 
-  // Average width across visible ankle observations
   const avgWidth = mean(ankleWidths);
-  const variance = mean(ankleWidths.map((w) => (w - avgWidth) ** 2));
-  void variance;
-
-  // Return average width as value, CV as additional info via confidence
   const confidence = Math.min(0.85, ankleWidths.length / 20);
 
   return {
     value: parseFloat(avgWidth.toFixed(4)),
     confidence,
-    unit: 'normalized',
+    unit: 'hip-widths',
     limitedReason: ankleWidths.length < 10 ? 'Limited ankle observations' : undefined,
   };
 }

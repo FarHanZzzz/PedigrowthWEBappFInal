@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, Play, ShieldCheck, Stethoscope } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowRight, ShieldCheck } from "lucide-react";
+import HomeActions from "@/app/home/HomeActions";
 
 export const metadata = {
   title: "Pedi-Growth — How it works",
@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function HomePage() {
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-8 py-6">
+    <div className="w-full space-y-8">
       <div>
         <p className="text-sm font-medium text-primary">How Pedi-Growth works</p>
         <h1 className="medical-title mt-2 text-3xl font-semibold leading-tight sm:text-4xl">
@@ -20,22 +20,9 @@ export default function HomePage() {
         </p>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <Link href="/start" className="w-full sm:w-auto">
-          <Button size="lg" className="h-12 w-full rounded-xl">
-            <Play className="h-4 w-4" />
-            Start a walking check
-          </Button>
-        </Link>
-        <Link href="/portal/clinician" className="w-full sm:w-auto">
-          <Button variant="outline" size="lg" className="h-12 w-full rounded-xl">
-            <Stethoscope className="h-4 w-4" />
-            Clinician workspace
-          </Button>
-        </Link>
-      </div>
+      <HomeActions />
 
-      <ol className="space-y-3">
+      <ol className="grid gap-3 md:grid-cols-3">
         {[
           "Tell us your child’s age and whether they walk independently.",
           "Record a short front-view clip — full body, 4–6 steps, phone still.",

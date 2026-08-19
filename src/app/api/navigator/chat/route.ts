@@ -330,27 +330,32 @@ function selectKnowledgeCards(prompt: string): KnowledgeCard[] {
 function refusalForPrompt(prompt: string): { text: string; reason: string } | null {
   const lowered = prompt.toLowerCase();
 
-  if (/(diagnos|cerebral palsy|cp\?|does my child have|confirm)/i.test(lowered)) {
+  if (/(diagnos(e|is|ed|ing)|does my child have|is this cerebral palsy|do they have (cp|cerebral palsy)\b)/i.test(lowered)) {
     return { text: NAVIGATOR_REFUSAL_RESPONSES.diagnosis, reason: 'diagnostic_request' };
   }
-  if (/(treatment|therapy plan|intervention plan)/i.test(lowered)) {
+  if (/(prescribe|medication plan|start (this|that) therapy|treatment plan for)/i.test(lowered)) {
     return { text: NAVIGATOR_REFUSAL_RESPONSES.treatment, reason: 'treatment_request' };
   }
-  if (/(medication|medicine|drug|dose)/i.test(lowered)) {
+  if (/(medication|medicine|drug dose|what (medicine|medication))/i.test(lowered)) {
     return { text: NAVIGATOR_REFUSAL_RESPONSES.medication, reason: 'medication_request' };
   }
-  if (/(prognosis|will they|get better|outcome)/i.test(lowered)) {
+  if (/(prognosis|will they (walk|get better|recover)|long-term outcome)/i.test(lowered)) {
     return { text: NAVIGATOR_REFUSAL_RESPONSES.prognosis, reason: 'prognosis_request' };
   }
-  if (/(probability|chance|odds|percent)/i.test(lowered)) {
+  if (/(probability of|percent chance|odds of (cp|cerebral palsy|disease))/i.test(lowered)) {
     return { text: NAVIGATOR_REFUSAL_RESPONSES.probability, reason: 'probability_request' };
   }
 
   return null;
 }
 
-function metricLabel(key: string): string {
-  return key.replace(/_/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase());
+function resolveOpenRouterEndpoint(): string {
+  const configured = (process.env.OPENROUTER_API_URL ?? '').trim();
+  const isLocal = /localhost|127\.0\.0\.1/.test(configured);
+  if (!configured || (isLocal && process.env.NODE_ENV === 'production')) {
+    return 'https://openrouter.ai/api/v1/chat/completions';
+  }
+  return configured;
 }
 
 function describeConcernLevel(riskCategory: string): string {
@@ -419,6 +424,13 @@ function buildMetricHighlights(metrics: Record<string, number>): string[] {
   return highlights.slice(0, 4);
 }
 
+function joinParagraphs(parts: string[]): string {
+  return parts
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join('\n\n');
+}
+
 function buildHeuristicPayload(
   prompt: string,
   mode: Mode,
@@ -429,148 +441,85 @@ function buildHeuristicPayload(
   source: 'heuristic' | 'mock'
 ): AssistantPayload {
   const lowered = prompt.toLowerCase();
-  const asksForIssueLocation =
-    /(where.*issue|where is the issue|show me where|which frame|where should i look|location of issue|point out issues)/i.test(
-      lowered
-    );
   const asksForSimpleSummary =
-    /(summar|simple language|plain language|overall|what do these results mean|explain my results)/i.test(
+    /(summar|simple language|plain language|overall|what do these results mean|explain my results|what does this walking check mean)/i.test(
       lowered
     );
-  const caregiverStyle = mode === 'caregiver' || asksForSimpleSummary;
-  const intro =
-    caregiverStyle
-      ? 'Here is a simple summary of your results:'
-      : mode === 'clinician'
-      ? 'Here is a focused interpretation based on the available assessment evidence:'
-      : 'Here is a caregiver-friendly explanation based on this assessment:';
+  const asksForQuestions = /(question|clinician|doctor|visit|appointment)/i.test(lowered);
+  const asksForQuality = /(retake|quality|confidence|limited|how sure)/i.test(lowered);
+  const asksForWeek = /(this week|monitor|watch|next)/i.test(lowered);
 
-  const actionItems: string[] = [];
   const suggestedPrompts: string[] = [
-    'Can you summarize the top 3 findings?',
-    'What should I monitor before the next check-in?',
-    'Help me prepare questions for our clinician visit.',
+    'What does this walking check mean?',
+    'How sure should we be about this clip?',
+    'What should I watch this week?',
+    'Give me 3 questions for the clinician.',
   ];
 
-  let response = `${intro}\n\n`;
+  const highlights = buildMetricHighlights(metrics);
+  const followupText = context.followup_priority
+    ? followupPriorityText(context.followup_priority)
+    : '';
+  const closing =
+    'This is screening support from one walking clip. It is not a diagnosis and should be reviewed with a clinician.';
 
-  if (asksForIssueLocation) {
-    const hotspots = context.issue_hotspots ?? [];
-    if (hotspots.length > 0) {
-      response += '- The main issue locations are mapped below so you can inspect them directly in the video.\n';
-      for (const spot of hotspots.slice(0, 4)) {
-        response += `- ${spot.title}: ${(spot.timestamp_ms / 1000).toFixed(2)}s (frame ${spot.frame_index}). ${spot.description}\n`;
-      }
-      response += '- Use the hotspot buttons in this assistant to jump to each moment interactively.\n';
-      actionItems.push('Open Hero Video and tap each hotspot to review motion at that moment.');
-      actionItems.push('Compare these hotspot moments side-by-side before clinician follow-up.');
-    } else {
-      response += '- I do not have frame-level hotspot markers for this clip yet.\n';
-      response += '- I can still help by identifying likely concern domains from available metrics.\n';
-      actionItems.push('Ask for a simple summary first, then request issue hotspots again.');
-    }
-  } else if (asksForSimpleSummary) {
-    response += `- ${describeConcernLevel(riskCategory)}\n`;
+  const paragraphs: string[] = [];
+  const actionItems: string[] = [];
 
-    if (context.summary) {
-      response += `- ${context.summary}\n`;
+  if (asksForQuestions) {
+    paragraphs.push(
+      mode === 'clinician'
+        ? 'Use this clip as structured pre-visit context, not as a standalone conclusion.'
+        : 'These questions help you walk into the visit with a clear picture of this clip.',
+    );
+    paragraphs.push(
+      [
+        '1. Which walking pattern in this clip should we watch most closely?',
+        '2. Does this recording look usable enough, or should we repeat it?',
+        '3. When should we come back if the pattern stays the same?',
+      ].join('\n'),
+    );
+    actionItems.push('Bring this summary and one extra walking clip to the visit.');
+    actionItems.push('Write down any new stumbles, fatigue, or left-right differences this week.');
+  } else if (asksForQuality) {
+    paragraphs.push(
+      context.confidence_notes ||
+        'How sure we can be depends on lighting, a still camera, and whether the full body stayed in frame.',
+    );
+    if (context.quality_result) {
+      paragraphs.push(`Clip quality for this run: ${context.quality_result}.`);
     }
-
-    const highlights = buildMetricHighlights(metrics);
-    if (highlights.length > 0) {
-      for (const line of highlights) {
-        response += `- ${line}\n`;
-      }
-    } else {
-      response += '- I can still help you interpret each metric one by one if needed.\n';
+    const tips = (context.retake_suggestions ?? []).slice(0, 3);
+    if (tips.length > 0) {
+      paragraphs.push(tips.map((tip, index) => `${index + 1}. ${tip}`).join('\n'));
     }
-
-    if (context.confidence_notes) {
-      response += `- Confidence note: ${context.confidence_notes}\n`;
-    }
-
-    const followupText = context.followup_priority
-      ? followupPriorityText(context.followup_priority)
-      : '';
-    if (followupText) {
-      response += `- ${followupText}\n`;
-    }
-
-    actionItems.push('Save 1 to 2 short clips to compare at your next follow-up.');
-    actionItems.push('Note any new asymmetry, instability, or rhythm changes this week.');
-    if (context.followup_priority) {
-      actionItems.push(`Current follow-up priority: ${context.followup_priority}.`);
-    }
-  } else if (lowered.includes('symmetry')) {
-    const symmetryValue = metrics.symmetry_index;
-    response +=
-      typeof symmetryValue === 'number'
-        ? `- Step symmetry compares left-right movement timing. In this clip it is ${symmetryValue.toFixed(
-            3
-          )}, which helps describe how balanced walking appears.\n`
-        : '- Step symmetry compares left-right movement timing and helps describe how balanced walking appears.\n';
-    response += '- This is a screening descriptor, not a diagnosis.\n';
-    actionItems.push('Track whether left-right balance looks different in future clips.');
-    actionItems.push('Bring one or two recent clips to your clinical follow-up.');
-  } else if (/(retake|quality|confidence|limited)/i.test(lowered)) {
-    const qualityLine = context.quality_result
-      ? `- Current quality result: ${context.quality_result}.\n`
-      : '- Video quality directly affects confidence in the interpretation.\n';
-    response += qualityLine;
-    response +=
-      context.confidence_notes && context.confidence_notes.length > 0
-        ? `- ${context.confidence_notes}\n`
-        : '- Better lighting, stable camera framing, and full-body visibility improve confidence.\n';
-    for (const tip of (context.retake_suggestions ?? []).slice(0, 3)) {
-      actionItems.push(tip);
-    }
-    if (actionItems.length === 0) {
-      actionItems.push('Capture 4 to 6 uninterrupted steps with full body in frame.');
-      actionItems.push('Use bright, even lighting and keep the camera steady.');
-    }
-  } else if (/(question|clinician|doctor|visit|appointment)/i.test(lowered)) {
-    response += '- You can use this summary to organize a focused clinician conversation.\n';
-    response += '- Ask about what to monitor at home and when to repeat assessment.\n';
-    actionItems.push('Ask which gait pattern changes would warrant earlier follow-up.');
-    actionItems.push('Ask if additional in-person assessment is recommended now.');
-    actionItems.push('Ask how to track progress between visits.');
-  } else if (/(next|now|plan|help)/i.test(lowered)) {
-    response += `- Current concern level is ${riskCategory || 'unknown'}.\n`;
-    response += '- Prioritize observation trends over single-clip conclusions.\n';
-    if (context.followup_priority) {
-      actionItems.push(`Follow-up priority in this report: ${context.followup_priority}.`);
-    }
-    actionItems.push('Document any new asymmetry, rhythm, or stability changes.');
-    actionItems.push('Prepare 2 to 3 specific questions before your next visit.');
+    actionItems.push('Record another 8 to 12 second front-view clip if the first one was dark or cropped.');
+  } else if (asksForWeek) {
+    paragraphs.push(describeConcernLevel(riskCategory));
+    if (followupText) paragraphs.push(followupText);
+    paragraphs.push(
+      [
+        '1. Keep this summary ready for the next appointment.',
+        '2. Watch whether walking looks different when the child is tired.',
+        '3. Record one more clip in good light if you can.',
+      ].join('\n'),
+    );
+    actionItems.push('Note falls, hesitation, or one-sided differences this week.');
   } else {
-    if (context.summary) {
-      response += `- ${context.summary}\n`;
-    } else {
-      response += '- I can explain gait metrics, confidence limits, and follow-up planning.\n';
+    paragraphs.push(describeConcernLevel(riskCategory));
+    if (context.summary) paragraphs.push(context.summary);
+    if (highlights[0]) paragraphs.push(highlights[0]);
+    if (followupText) paragraphs.push(followupText);
+    if (asksForSimpleSummary && highlights.length > 1) {
+      paragraphs.push(highlights.slice(1, 3).join(' '));
     }
-
-    const highlights = buildMetricHighlights(metrics);
-    if (highlights.length > 0) {
-      response += `- ${highlights[0]}\n`;
-    } else {
-      response +=
-        Object.keys(metrics).length > 0
-          ? `- Available metrics now: ${Object.keys(metrics)
-              .slice(0, 6)
-              .map(metricLabel)
-              .join(', ')}.\n`
-          : '- I do not have detailed metrics in this message, but I can still help plan next steps.\n';
-    }
-
-    actionItems.push('Ask me to explain any metric in plain language.');
-    actionItems.push('Ask me to create clinician visit questions from these results.');
+    actionItems.push('Ask me for visit questions or a this-week plan if you want a shorter list.');
   }
 
-  response +=
-    '\nThis guidance supports clinical conversations and does not replace professional evaluation by your healthcare team.';
+  paragraphs.push(closing);
 
   return {
-    response,
+    response: joinParagraphs(paragraphs),
     actionItems: Array.from(new Set(actionItems)).slice(0, 5),
     suggestedPrompts,
     citations,
@@ -589,8 +538,7 @@ function sanitizeAssistantPayload(payload: AssistantPayload): AssistantPayload {
 
   return {
     ...payload,
-    response:
-      "I can only provide non-diagnostic guidance from this assessment. I can help explain the metrics and prepare questions for your child's healthcare team.",
+    response: `${payload.response}\n\nThis is screening support only. It is not a diagnosis.`,
     policyFiltered: true,
     filterReason: safety.violations.join(', '),
   };
@@ -598,25 +546,11 @@ function sanitizeAssistantPayload(payload: AssistantPayload): AssistantPayload {
 
 function evaluateConfidenceFallbackReason(
   context: NavigatorContext,
-  metrics: Record<string, number>
+  _metrics: Record<string, number>
 ): string | null {
   const quality = (context.quality_result ?? '').trim().toLowerCase();
-  const hasMetricEvidence = Object.keys(metrics).length > 0;
-  const hasContextEvidence =
-    Boolean(context.summary) ||
-    (context.assessed_domains?.length ?? 0) > 0 ||
-    (context.issue_hotspots?.length ?? 0) > 0;
-
   if (quality === 'fail' || quality === 'cannot_assess') {
     return 'quality_result_low_confidence';
-  }
-
-  if (quality === 'borderline' && !hasMetricEvidence) {
-    return 'borderline_quality_without_metric_snapshot';
-  }
-
-  if (!hasMetricEvidence && !hasContextEvidence) {
-    return 'insufficient_assessment_context';
   }
 
   return null;
@@ -946,10 +880,11 @@ export async function POST(req: Request) {
           {
             apiKey: process.env.OPENROUTER_API_KEY,
             model: process.env.OPENROUTER_MODEL,
+            apiUrl: resolveOpenRouterEndpoint(),
           },
           {
-            temperature: mode === 'clinician' ? 0.15 : 0.2,
-            maxTokens: 420,
+            temperature: mode === 'clinician' ? 0.15 : 0.25,
+            maxTokens: 650,
             systemPrompt: `${NAVIGATOR_SYSTEM_PROMPT}\n\nMODE RULE: ${modeInstruction(mode)}`,
           }
         );

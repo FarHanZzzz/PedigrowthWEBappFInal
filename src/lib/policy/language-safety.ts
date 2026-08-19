@@ -25,11 +25,20 @@ const PROHIBITED_PATTERNS: Array<{ pattern: RegExp; description: string }> = [
  * Check text for prohibited medical/diagnostic language.
  * Returns safety result with specific violations identified.
  */
+function stripSafeDisclaimerLanguage(text: string): string {
+  return text
+    .replace(/not a diagnos(is|tic)[^.?!]*[.?!]?/gi, " ")
+    .replace(/does not diagnos\w*[^.?!]*[.?!]?/gi, " ")
+    .replace(/non-diagnostic[^.?!]*[.?!]?/gi, " ")
+    .replace(/screening support[^.?!]*[.?!]?/gi, " ");
+}
+
 export function checkLanguageSafety(text: string): LanguageSafetyResult {
   const violations: string[] = [];
+  const screened = stripSafeDisclaimerLanguage(text);
 
   for (const { pattern, description } of PROHIBITED_PATTERNS) {
-    if (pattern.test(text)) {
+    if (pattern.test(screened)) {
       violations.push(description);
     }
   }

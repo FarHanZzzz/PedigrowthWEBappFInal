@@ -4,17 +4,16 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
+  Activity,
   AlertTriangle,
   ArrowLeft,
   BarChart3,
   Camera,
   Download,
   MessageCircle,
-  MessageSquare,
   PlayCircle,
   Stethoscope,
   Video,
-  Activity,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +32,8 @@ import { buildRunProvenance } from "@/lib/session/runProvenance";
 import type { AnalysisSessionResult } from "@/lib/session/analysisSession";
 import type { AnalysisTrace } from "@/lib/trace/traceTypes";
 import { buildReportBundle } from "@/lib/reports";
+import { useAuthRole } from "@/lib/auth/useAuthRole";
+import { cn } from "@/lib/utils";
 import {
   CONCERN_BADGE_STYLES,
   CONCERN_LABELS,
@@ -53,7 +54,7 @@ const TABS: { key: ResultTab; label: string; icon: typeof BarChart3 }[] = [
 
 const CONCERN_DOMAINS = [
   { key: "asymmetry", label: "Asymmetry", desc: "Left-right differences in walking pattern" },
-  { key: "irregularRhythm", label: "Rhythm regularity", desc: "Consistency of step timing and cadence" },
+  { key: "irregularRhythm", label: "Rhythm regularity", desc: "Consistency of step-to-step timing" },
   { key: "lateralInstability", label: "Lateral stability", desc: "Side-to-side steadiness during walking" },
   { key: "pathDeviation", label: "Path deviation", desc: "Walking in a straight line vs. veering" },
 ];
@@ -339,6 +340,8 @@ export default function ResultsPage() {
   const params = useParams();
   const router = useRouter();
   const resultId = params.id as string;
+  const role = useAuthRole();
+  const canOpenClinicianPacket = role === "admin";
 
   const [result, setResult] = useState<AnalysisSessionResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -599,6 +602,7 @@ export default function ResultsPage() {
       cadence: result.features.cadence.value,
       frontal_asymmetry: result.features.frontalAsymmetry.value,
       stride_regularity: result.features.strideRegularity.value,
+      lateral_trunk_sway: result.features.lateralTrunkSway.value,
       path_deviation: result.features.pathDeviation.value,
       base_of_support: result.features.baseOfSupport.value,
     };
@@ -766,13 +770,13 @@ export default function ResultsPage() {
             <RunProvenanceBadge run={run} />
           </div>
 
-          <Card className="bg-error-container/65">
+          <Card className="bg-error-container/65 dark:bg-red-950/40">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base text-red-900">
+              <CardTitle className="text-base text-red-900 dark:text-red-100">
                 Validation failed before real analysis could complete
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm text-red-900/85">
+            <CardContent className="space-y-3 text-sm text-red-900/85 dark:text-red-100/85">
               <p>{run.failureReason ?? "The pipeline stopped before producing a trustworthy result."}</p>
               <div className="rounded-xl bg-surface-container-lowest/80 p-3 text-xs">
                 <p><strong>Stage:</strong> {run.failureStage ?? "unknown"}</p>
@@ -780,7 +784,7 @@ export default function ResultsPage() {
                 <p><strong>Model:</strong> {run.modelLabel}</p>
                 <p><strong>Validation mode:</strong> {run.validationMode ? "on" : "off"}</p>
               </div>
-              <p className="text-xs text-red-800/80">
+              <p className="text-xs text-red-800/80 dark:text-red-200/80">
                 No fallback result was substituted. This failure is intentional so the demo never pretends a broken run was real.
               </p>
             </CardContent>
@@ -855,8 +859,8 @@ export default function ResultsPage() {
   return (
     <div className="pb-6">
       {isBestEffort && (
-        <div className="border-b border-amber-300 bg-amber-50 px-4 py-2">
-          <p className="text-xs text-amber-900 flex items-center gap-2">
+        <div className="border-b border-amber-300 bg-amber-50 py-2 dark:border-amber-500/40 dark:bg-amber-950/50">
+          <p className="text-xs text-amber-900 flex items-center gap-2 dark:text-amber-200">
             <AlertTriangle className="h-3.5 w-3.5" />
             <span>
               <strong>Limited-confidence analysis.</strong> The clip was usable, but confidence constraints may reduce reliability for some metrics.
@@ -865,31 +869,33 @@ export default function ResultsPage() {
         </div>
       )}
 
-      <div className="mx-auto max-w-2xl space-y-5 px-1 py-4 sm:px-0">
-        <div className="space-y-3 text-center">
-          <h1 data-display="true" className="medical-title text-2xl font-semibold sm:text-3xl">
+          <div className="w-full space-y-6 py-2">
+        <div className="space-y-3 text-center lg:text-left">
+          <h1 data-display="true" className="medical-title text-2xl font-semibold leading-tight sm:text-3xl">
             Walking summary for {nickname}
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm leading-relaxed text-muted-foreground">
             What this clip showed, how sure we are, and what to do next.
           </p>
-          <div className="print-hidden flex items-center justify-center gap-2 text-sm">
-            <span className="rounded-full bg-primary/10 px-3 py-1 font-medium text-primary">Family</span>
-            <button
-              type="button"
-              onClick={() => router.push(`/results/${resultId}/clinician`)}
-              className="rounded-full px-3 py-1 font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-            >
-              Clinician packet
-            </button>
-          </div>
+          {canOpenClinicianPacket && (
+            <div className="print-hidden flex items-center justify-center gap-2 text-sm lg:justify-start">
+              <span className="rounded-full bg-primary/10 px-3 py-1 font-medium text-primary">Family</span>
+              <button
+                type="button"
+                onClick={() => router.push(`/results/${resultId}/clinician`)}
+                className="rounded-full px-3 py-1 font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                Clinician packet
+              </button>
+            </div>
+          )}
           <p className="text-xs text-muted-foreground">
             {new Date(result.analyzedAt).toLocaleString()}
           </p>
         </div>
 
         <Card className="medical-surface">
-          <CardContent className="space-y-5 p-5 sm:p-6">
+          <CardContent className="space-y-6 p-6 sm:p-7">
             <div>
               <p className="text-sm font-medium text-muted-foreground">What we noticed</p>
               <p className="mt-1 text-lg font-semibold leading-snug">
@@ -943,7 +949,7 @@ export default function ResultsPage() {
           </CardContent>
         </Card>
 
-        <div className="mx-auto flex max-w-md rounded-xl bg-muted/60 p-1">
+        <div className="mx-auto flex w-full max-w-md rounded-xl bg-muted/60 p-1 lg:hidden">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             return (
@@ -980,8 +986,8 @@ export default function ResultsPage() {
           </div>
         )}
 
-        {activeTab === "summary" && (
-          <div className="space-y-4">
+        <div className="grid items-start gap-6 lg:grid-cols-2 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+        <div className={cn("space-y-4", activeTab !== "summary" && "hidden lg:block")}>
               <details className="medical-surface p-4">
                 <summary className="cursor-pointer text-sm font-medium">
                   More details
@@ -1032,75 +1038,6 @@ export default function ResultsPage() {
               </CardContent>
             </Card>
 
-            {supplementalMotorMetadata && (
-              <Card className="border-amber-300 bg-amber-50/70">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-bold text-amber-900">
-                    Supplemental motor context attached
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-1 text-xs text-amber-900/90">
-                  <p>
-                    Motor milestone screening was added after this gait analysis as supportive context.
-                  </p>
-                  <p>
-                    Use both outputs together for follow-up planning, not as a standalone diagnosis.
-                  </p>
-                  {motorSummaryTimestamp && (
-                    <p className="text-[11px] text-amber-900/70">
-                      Added: {new Date(motorSummaryTimestamp).toLocaleString()}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            <Card className="bg-surface-container-lowest">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base font-bold">
-                  {supplementalMotorMetadata
-                    ? "Supplemental Motor Development Snapshot"
-                    : "Motor Development Snapshot"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm text-foreground/90">
-                {false && sessionClinicalAssessment?.motorDelayAssessment ? (
-                  <>
-                    <p>
-                      <strong>Status:</strong>{" "}
-                      {sessionClinicalAssessment?.motorDelayAssessment?.delayFlag === "concern"
-                        ? "Evaluation recommended"
-                        : sessionClinicalAssessment?.motorDelayAssessment?.delayFlag === "watch"
-                          ? "Monitor closely"
-                          : "On track"}
-                    </p>
-                    <p>{sessionClinicalAssessment?.motorDelayAssessment?.summaryNote ?? "Motor milestone summary was captured for this session."}</p>
-                    {typeof sessionClinicalAssessment?.motorDelayAssessment?.expectedFromPriorCount === "number" &&
-                      typeof sessionClinicalAssessment?.motorDelayAssessment?.achievedFromPriorCount === "number" && (
-                        <p className="text-xs text-muted-foreground">
-                          Milestones achieved from prior stages: {sessionClinicalAssessment?.motorDelayAssessment?.achievedFromPriorCount} /
-                          {" "}{sessionClinicalAssessment?.motorDelayAssessment?.expectedFromPriorCount}
-                        </p>
-                      )}
-                    {supplementalMotorMetadata && (
-                      <p className="text-xs text-muted-foreground">
-                        Source: Optional motor check added after gait analysis.
-                      </p>
-                    )}
-                  </>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    No motor milestone screening output is attached to this gait run yet.
-                  </p>
-                )}
-                {(sessionClinicalAssessment?.redFlags?.length ?? 0) > 0 && (
-                  <p className="text-xs font-medium text-foreground/85">
-                    Additional caregiver red flags noted: {sessionClinicalAssessment?.redFlags?.length}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-
             <Card className="bg-surface-container-lowest">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base font-bold">What We Noticed In This Video</CardTitle>
@@ -1114,12 +1051,12 @@ export default function ResultsPage() {
 
                   if (isSuppressed) {
                     return (
-                      <div key={domain.key} className="flex items-center justify-between rounded-2xl border border-dashed border-amber-300 bg-amber-50/60 p-3">
+                      <div key={domain.key} className="flex items-center justify-between rounded-2xl border border-dashed border-amber-300 bg-amber-50/60 p-3 dark:border-amber-500/40 dark:bg-amber-950/40">
                         <div>
                           <p className="text-sm font-semibold">{domain.label}</p>
                           <p className="text-sm text-foreground/80">{domain.desc}</p>
                         </div>
-                        <Badge variant="outline" className="text-[10px] border-amber-300 bg-amber-100 text-amber-900">
+                        <Badge variant="outline" className="text-[10px] border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/50 dark:text-amber-200">
                           Not assessed
                         </Badge>
                       </div>
@@ -1204,31 +1141,17 @@ export default function ResultsPage() {
               </div>
             </details>
 
-            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-              <Button
-                variant="outline"
-                className="h-11 flex-1 rounded-xl"
-                onClick={() => router.push(`/concern?mode=supplemental&resultId=${resultId}`)}
-              >
-                <Activity className="h-4 w-4" />
-                <span className="truncate">{hasMotorScreenAttached ? "Update motor check" : "Run motor check"}</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="h-11 flex-1 rounded-xl"
-                onClick={() => router.push(`/results/${resultId}/refine`)}
-              >
-                <MessageSquare className="h-4 w-4" />
-                Add clinician notes
-              </Button>
-              <Button
-                variant="outline"
-                className="h-11 flex-1 rounded-xl"
-                onClick={() => router.push(`/results/${resultId}/clinician`)}
-              >
-                <Stethoscope className="h-4 w-4" />
-                Open packet
-              </Button>
+            <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
+              {canOpenClinicianPacket && (
+                <Button
+                  variant="outline"
+                  className="h-11 flex-1 rounded-xl"
+                  onClick={() => router.push(`/results/${resultId}/clinician`)}
+                >
+                  <Stethoscope className="h-4 w-4" />
+                  Open packet
+                </Button>
+              )}
               {hasTrace && (
                 <Button
                   variant="outline"
@@ -1261,7 +1184,13 @@ export default function ResultsPage() {
                     ageMonths: session.ageMonths || 0,
                     assessmentDate: new Date().toLocaleDateString(),
                     assessmentId: resultId,
-                    concerns: result.concerns as unknown as Record<string, string>,
+                    concerns: {
+                      overallLevel: result.concerns.overallLevel,
+                      asymmetry: result.concerns.asymmetry,
+                      irregularRhythm: result.concerns.irregularRhythm,
+                      lateralInstability: result.concerns.lateralInstability,
+                      pathDeviation: result.concerns.pathDeviation,
+                    },
                     metrics: metricsMap,
                     qualityTier: result.quality?.result || "unknown",
                     assessmentMode: result.quality?.assessmentMode || "unknown",
@@ -1285,10 +1214,8 @@ export default function ResultsPage() {
               </Button>
             </div>
           </div>
-        )}
 
-        {activeTab === "video" && (
-          <div className="space-y-4">
+        <div className={cn("space-y-4 lg:sticky lg:top-24", activeTab !== "video" && "hidden lg:block")}>
             <Card className="bg-surface-container-low">
               <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
                 <div>
@@ -1373,7 +1300,7 @@ export default function ResultsPage() {
               </div>
             )}
           </div>
-        )}
+        </div>
 
         <Button
           variant="ghost"
@@ -1404,9 +1331,7 @@ export default function ResultsPage() {
               metrics={assistantMetrics}
               risk_category={assistantRiskCategory}
               context={assistantContext}
-              issueHotspots={assistantIssueHotspots}
               isOpen={isAssistantOpen}
-              onFocusIssue={handleFocusIssue}
               onToggle={() => setIsAssistantOpen(false)}
             />
           </div>

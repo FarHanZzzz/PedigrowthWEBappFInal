@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { FileClock, Home, LogOut, Plus, Shield, Stethoscope, Users } from "lucide-react";
+import { FileClock, Home, LogOut, Plus, Stethoscope, Users } from "lucide-react";
 import GlobalAssistantDock from "@/components/ai/GlobalAssistantDock";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/utils/supabase/client";
-import { normalizeRole, type UserRole } from "@/lib/auth/roles";
+import { dashboardPath } from "@/lib/auth/roles";
+import { useAuthRole } from "@/lib/auth/useAuthRole";
 import { cn } from "@/lib/utils";
 
 const FAMILY_NAV = [
@@ -18,41 +18,56 @@ const FAMILY_NAV = [
 ];
 
 const CLINICIAN_NAV = [
-  { href: "/portal/clinician", label: "Caseload", icon: Users, match: (path: string) => path === "/clinician" || path.startsWith("/portal/clinician") },
+  { href: "/portal/clinician", label: "Home", icon: Home, match: (path: string) => path === "/clinician" || path.startsWith("/portal/clinician") },
   { href: "/history", label: "History", icon: FileClock, match: (path: string) => path.startsWith("/history") || path.startsWith("/results") },
   { href: "/start", label: "New check", icon: Plus, match: (path: string) => path.startsWith("/start") || path.startsWith("/capture") || path.startsWith("/analyzing") },
 ];
 
 const ADMIN_NAV = [
-  { href: "/portal/parent", label: "Family", icon: Home, match: (path: string) => path.startsWith("/portal/parent") },
-  { href: "/portal/clinician", label: "Caseload", icon: Users, match: (path: string) => path.startsWith("/portal/clinician") },
-  { href: "/portal/admin", label: "Admin", icon: Shield, match: (path: string) => path.startsWith("/portal/admin") },
+  { href: "/portal/admin", label: "Home", icon: Home, match: (path: string) => path.startsWith("/portal/admin") },
+  { href: "/portal/parent", label: "Family", icon: Users, match: (path: string) => path.startsWith("/portal/parent") },
+  { href: "/portal/clinician", label: "Caseload", icon: Stethoscope, match: (path: string) => path.startsWith("/portal/clinician") },
 ];
+
+function navForPath(pathname: string) {
+  if (pathname.startsWith("/portal/admin")) return ADMIN_NAV;
+  if (pathname === "/clinician" || pathname.startsWith("/portal/clinician")) return CLINICIAN_NAV;
+  return FAMILY_NAV;
+}
+
+function navForRole(role: "parent" | "clinician" | "admin" | null, pathname: string) {
+  if (role === "admin") return ADMIN_NAV;
+  if (role === "clinician") return CLINICIAN_NAV;
+  if (role === "parent") return FAMILY_NAV;
+  return navForPath(pathname);
+}
 
 export default function AppShell({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
   const router = useRouter();
-  const [role, setRole] = useState<UserRole | null>(null);
-  const admin = role === "admin";
-  const clinician = role === "clinician";
-  const navItems = admin ? ADMIN_NAV : clinician ? CLINICIAN_NAV : FAMILY_NAV;
+  const role = useAuthRole();
+  const navItems = navForRole(role, pathname);
+  const homeHref = dashboardPath(
+    role ??
+      (pathname.startsWith("/portal/admin")
+        ? "admin"
+        : pathname === "/clinician" || pathname.startsWith("/portal/clinician")
+          ? "clinician"
+          : "parent"),
+  );
   const isResults = pathname.startsWith("/results") || pathname.startsWith("/share");
   const hideBottomNav = pathname.startsWith("/analyzing");
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        setRole(normalizeRole(data.user.user_metadata?.role));
-      }
-    });
-  }, []);
 
   async function signOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
+    try {
+      window.sessionStorage.removeItem("pedigrowth_role");
+    } catch {
+      // Ignore storage errors in private browsing.
+    }
     router.replace("/");
     router.refresh();
   }
@@ -60,11 +75,8 @@ export default function AppShell({
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       <header className="sticky top-0 z-50 border-b border-border/60 bg-background/90 backdrop-blur-md">
-        <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Link
-            href={admin ? "/portal/admin" : clinician ? "/portal/clinician" : "/portal/parent"}
-            className="inline-flex items-center gap-2"
-          >
+        <div className="page-frame mx-auto flex h-14 w-full items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link href={homeHref} className="inline-flex items-center gap-2">
             <span className="inline-flex size-8 items-center justify-center rounded-xl bg-primary text-primary-foreground">
               <Stethoscope />
             </span>
@@ -103,13 +115,13 @@ export default function AppShell({
         </div>
       </header>
 
-      <main className={cn("flex-1 px-4 py-5 sm:px-6", !hideBottomNav && "pb-24 md:pb-6")}>
+      <main className={cn("page-frame mx-auto w-full flex-1 px-4 py-5 sm:px-6 lg:px-8 lg:py-8", !hideBottomNav && "pb-24 md:pb-8")}>
         {children}
       </main>
 
       {isResults && (
-        <footer className="border-t border-border/60 px-4 py-4 print:hidden">
-          <p className="mx-auto max-w-3xl text-center text-xs leading-relaxed text-muted-foreground">
+        <footer className="border-t border-border/60 print:hidden">
+          <p className="page-frame mx-auto px-4 py-4 text-center text-xs leading-relaxed text-muted-foreground sm:px-6 lg:px-8">
             This is a screening summary for a clinician conversation. It does not diagnose a medical condition.
           </p>
         </footer>

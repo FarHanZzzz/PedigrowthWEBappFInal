@@ -14,8 +14,8 @@ import type { CameraAngle, AssessmentMode } from '@/lib/types';
 export const MIN_CONCERN_CONFIDENCE = 0.3;
 
 /**
- * In best-effort mode, concerns are CAPPED at this level.
- * Prevents overconfident escalation from low-quality data.
+ * Very-low-confidence best-effort cap. Higher-confidence best-effort
+ * runs use a moderate cap instead — see computeConcernProfile.
  */
 export const BEST_EFFORT_CONCERN_CAP = 'mild' as const;
 

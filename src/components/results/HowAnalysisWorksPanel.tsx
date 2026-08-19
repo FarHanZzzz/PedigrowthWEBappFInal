@@ -51,32 +51,32 @@ export default function HowAnalysisWorksPanel({ result }: Props) {
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-xl border border-green-200 bg-green-50/60 p-3">
-            <p className="text-xs font-semibold text-green-800">What was assessed</p>
+          <div className="rounded-xl border border-green-200 bg-green-50/60 p-3 dark:border-green-500/40 dark:bg-green-950/40">
+            <p className="text-xs font-semibold text-green-800 dark:text-green-200">What was assessed</p>
             <div className="mt-2 space-y-1">
               {result.concerns.assessedDomains.length > 0 ? (
                 result.concerns.assessedDomains.map((domain) => (
-                  <p key={domain} className="text-xs text-green-900/80">
+                  <p key={domain} className="text-xs text-green-900/80 dark:text-green-200/80">
                     • {domain.charAt(0).toUpperCase() + domain.slice(1).replace(/([A-Z])/g, " $1")}
                   </p>
                 ))
               ) : (
-                <p className="text-xs text-green-900/80">No movement domains were confidently assessed.</p>
+                <p className="text-xs text-green-900/80 dark:text-green-200/80">No movement domains were confidently assessed.</p>
               )}
             </div>
           </div>
 
-          <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3">
-            <p className="text-xs font-semibold text-amber-800">What was not assessed</p>
+          <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3 dark:border-amber-500/40 dark:bg-amber-950/40">
+            <p className="text-xs font-semibold text-amber-800 dark:text-amber-200">What was not assessed</p>
             <div className="mt-2 space-y-1">
               {result.concerns.suppressedDomains.length > 0 ? (
                 result.concerns.suppressedDomains.map((domain) => (
-                  <p key={domain} className="text-xs text-amber-900/80">
+                  <p key={domain} className="text-xs text-amber-900/80 dark:text-amber-200/80">
                     • {domain.charAt(0).toUpperCase() + domain.slice(1).replace(/([A-Z])/g, " $1")}
                   </p>
                 ))
               ) : (
-                <p className="text-xs text-amber-900/80">No domains were suppressed for this run.</p>
+                <p className="text-xs text-amber-900/80 dark:text-amber-200/80">No domains were suppressed for this run.</p>
               )}
             </div>
           </div>

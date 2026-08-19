@@ -1,6 +1,8 @@
 // PEDI-GROWTH — Gait Pipeline API Client
 // Calls the Python XGBoost backend through Next.js proxy rewrites.
 
+import { normalizeXgboostPredictions, type XgboostPredictions } from '@/lib/api/xgboostPredictions';
+
 export interface LandmarkFrame {
   l_hip: [number, number];
   l_knee: [number, number];
@@ -14,13 +16,7 @@ export interface LandmarkFrame {
 
 export interface XGBoostPrediction {
   success: boolean;
-  predictions?: {
-    gait_asymmetry: { risk: boolean; probability: number };
-    trendelenburg_risk: { risk: boolean; probability: number };
-    trunk_instability: { risk: boolean; probability: number };
-    spinal_misalignment: { risk: boolean; probability: number };
-    composite_risk: { risk: boolean; probability: number };
-  };
+  predictions?: XgboostPredictions;
   error?: string;
   disclaimer: string;
 }
@@ -50,7 +46,11 @@ export async function predictFromLandmarks(
       return null;
     }
 
-    return (await response.json()) as XGBoostPrediction;
+    const payload = (await response.json()) as XGBoostPrediction & { predictions?: unknown };
+    return {
+      ...payload,
+      predictions: normalizeXgboostPredictions(payload.predictions) ?? undefined,
+    };
   } catch (err) {
     // Backend unavailable — graceful degradation
     console.warn("[Pedi-Growth] Backend prediction unavailable:", err);

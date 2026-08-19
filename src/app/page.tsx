@@ -6,7 +6,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 export default function HeroLandingPage() {
   return (
     <div className="min-h-dvh bg-background">
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5 sm:px-6">
+      <header className="page-frame mx-auto flex w-full items-center justify-between px-4 py-5 sm:px-6 lg:px-8">
         <Link href="/" className="inline-flex items-center gap-2">
           <span className="inline-flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Stethoscope />
@@ -21,8 +21,8 @@ export default function HeroLandingPage() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-6">
-        <section className="mx-auto max-w-3xl pt-8 text-center sm:pt-16">
+      <main className="page-frame mx-auto w-full px-4 pb-16 sm:px-6 lg:px-8">
+        <section className="mx-auto max-w-3xl pt-8 text-center sm:pt-20">
           <p className="mb-4 text-sm font-medium text-primary">Pediatric walking check</p>
           <h1 className="medical-title text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">
             A short walking video. A clear next conversation.
@@ -32,7 +32,7 @@ export default function HeroLandingPage() {
           </p>
         </section>
 
-        <section className="mx-auto mt-12 grid max-w-3xl gap-4 sm:grid-cols-2">
+        <section className="mx-auto mt-12 grid w-full max-w-4xl gap-4 sm:grid-cols-2 lg:max-w-none lg:grid-cols-2">
           <article className="medical-surface flex flex-col p-6 text-left">
             <span className="inline-flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <Users />

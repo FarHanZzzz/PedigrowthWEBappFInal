@@ -303,8 +303,7 @@ function ConcernPageContent() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-6">
-      <div className="mx-auto max-w-4xl">
+    <div className="w-full">
         {/* ── Header (preserved) ──────────────────────────────────── */}
         <div className="medical-surface mb-5 px-6 py-7 text-center">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -342,8 +341,8 @@ function ConcernPageContent() {
         </Card>
 
         {displayedSupplementalNotice && (
-          <Card className="mb-4 border-amber-300 bg-amber-50/70">
-            <CardContent className="p-4 text-xs text-amber-900">
+          <Card className="mb-4 border-amber-300 bg-amber-50/70 dark:border-amber-500/40 dark:bg-amber-950/50">
+            <CardContent className="p-4 text-xs text-amber-900 dark:text-amber-200">
               {displayedSupplementalNotice}
             </CardContent>
           </Card>
@@ -777,21 +776,18 @@ function ConcernPageContent() {
             {isSupplementalFlow ? "Return to results" : "Finish & return home"}
           </Button>
         </div>
-      </div>
     </div>
   );
 }
 
 function ConcernPageFallback() {
   return (
-    <div className="px-4 py-6 sm:px-6">
-      <div className="mx-auto max-w-4xl">
-        <Card className="bg-surface-container-low">
-          <CardContent className="p-4 text-sm text-muted-foreground">
-            Loading concern workflow...
-          </CardContent>
-        </Card>
-      </div>
+    <div className="w-full">
+      <Card className="bg-surface-container-low">
+        <CardContent className="p-4 text-sm text-muted-foreground">
+          Loading concern workflow...
+        </CardContent>
+      </Card>
     </div>
   );
 }

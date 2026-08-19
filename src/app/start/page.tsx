@@ -93,7 +93,7 @@ export default function QuickGatePage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-lg space-y-6 py-2">
+    <div className="page-task space-y-6 py-2">
       <JourneyStepper current={1} />
 
       <div className="text-center">

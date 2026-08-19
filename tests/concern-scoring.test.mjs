@@ -203,5 +203,68 @@ describe("Concern Scoring", () => {
       assert.equal(priority, "routine");
     });
   });
+
+  describe("Overall headline aggregation", () => {
+    function aggregateOverallLevel(levels) {
+      const order = ["none", "mild", "moderate", "significant"];
+      const ranked = [...levels].sort((a, b) => order.indexOf(b) - order.indexOf(a));
+      const top = ranked[0] ?? "none";
+      const second = ranked[1] ?? "none";
+      if (top === "significant" && order.indexOf(second) < order.indexOf("moderate")) {
+        return "moderate";
+      }
+      return top;
+    }
+
+    it("does not mark the whole clip significant from one domain", () => {
+      assert.equal(
+        aggregateOverallLevel(["significant", "none", "none", "mild"]),
+        "moderate",
+      );
+    });
+
+    it("keeps significant when a second domain is at least moderate", () => {
+      assert.equal(
+        aggregateOverallLevel(["significant", "moderate", "none", "none"]),
+        "significant",
+      );
+    });
+
+    it("returns none when every domain is none", () => {
+      assert.equal(aggregateOverallLevel(["none", "none", "none", "none"]), "none");
+    });
+
+    it("returns mild when that is the highest domain", () => {
+      assert.equal(aggregateOverallLevel(["mild", "none", "none", "none"]), "mild");
+    });
+  });
+
+  describe("Toward-camera path normalization", () => {
+    function residualSd(xs) {
+      const n = xs.length;
+      const ts = xs.map((_, i) => (n === 1 ? 0 : i / (n - 1)));
+      const sumT = ts.reduce((a, b) => a + b, 0);
+      const sumX = xs.reduce((a, b) => a + b, 0);
+      const sumTX = ts.reduce((a, t, i) => a + t * xs[i], 0);
+      const sumT2 = ts.reduce((a, t) => a + t * t, 0);
+      const slope = (n * sumTX - sumT * sumX) / (n * sumT2 - sumT * sumT);
+      const intercept = (sumX - slope * sumT) / n;
+      const residuals = ts.map((t, i) => xs[i] - (slope * t + intercept));
+      return Math.sqrt(residuals.reduce((a, r) => a + r * r, 0) / n);
+    }
+
+    it("does not treat a centered walk toward the camera as a curved path", () => {
+      const n = 30;
+      const scales = Array.from({ length: n }, (_, i) => 0.08 + (0.17 * i) / (n - 1));
+      const rawXOverScale = scales.map((scale) => 0.5 / scale);
+      // Constant physical offset from camera axis: image x moves with body scale.
+      const offsetInHipWidths = 0.25;
+      const centered = scales.map((scale) => (0.5 + offsetInHipWidths * scale - 0.5) / scale);
+      const rawSd = residualSd(rawXOverScale);
+      const centeredSd = residualSd(centered);
+      assert.ok(rawSd > 0.2, "uncentered x/scale still looks like a large path error");
+      assert.ok(centeredSd < 1e-10);
+    });
+  });
 });
 

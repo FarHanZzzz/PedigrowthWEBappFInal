@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { AnalysisSessionResult } from "@/lib/session/analysisSession";
+import { featuresForDomain } from "@/lib/scoring/metricRoles";
 
 interface Props {
   result: AnalysisSessionResult;
@@ -19,10 +20,10 @@ interface SuppressionReason {
 }
 
 const DOMAIN_METRICS: Record<string, string[]> = {
-  asymmetry: ["frontalAsymmetry", "stepSymmetry"],
-  irregularRhythm: ["cadence", "strideRegularity"],
-  lateralInstability: ["lateralTrunkSway", "baseOfSupport"],
-  pathDeviation: ["pathDeviation"],
+  asymmetry: featuresForDomain("asymmetry"),
+  irregularRhythm: featuresForDomain("irregularRhythm"),
+  lateralInstability: featuresForDomain("lateralInstability"),
+  pathDeviation: featuresForDomain("pathDeviation"),
 };
 
 const METRIC_LABELS: Record<string, string> = {
@@ -113,14 +114,14 @@ export default function QualityCoachPanel({ result, onRecordAgain }: Props) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3">
-            <p className="text-xs font-semibold text-amber-900">What needs recapture</p>
+          <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3 dark:border-amber-500/40 dark:bg-amber-950/40">
+            <p className="text-xs font-semibold text-amber-900 dark:text-amber-200">What needs recapture</p>
             <div className="mt-2 space-y-2">
               {suppressionReasons.length > 0 ? (
                 suppressionReasons.map((entry) => (
                   <div key={entry.domain} className="rounded-lg bg-card/75 p-2.5">
-                    <p className="text-xs font-semibold text-amber-900">{formatDomainLabel(entry.domain)}</p>
-                    <p className="mt-1 text-xs text-amber-900/80">{entry.reason}</p>
+                    <p className="text-xs font-semibold text-amber-900 dark:text-amber-100">{formatDomainLabel(entry.domain)}</p>
+                    <p className="mt-1 text-xs text-amber-900/80 dark:text-amber-200/80">{entry.reason}</p>
                     {entry.metrics.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1">
                         {entry.metrics.map((metric) => (
@@ -133,27 +134,27 @@ export default function QualityCoachPanel({ result, onRecordAgain }: Props) {
                   </div>
                 ))
               ) : (
-                <p className="text-xs text-amber-900/80">
+                <p className="text-xs text-amber-900/80 dark:text-amber-200/80">
                   No suppression was applied in this run. You can still retake for a stronger confidence profile.
                 </p>
               )}
             </div>
           </div>
 
-          <div className="rounded-xl border border-green-200 bg-green-50/70 p-3">
-            <p className="text-xs font-semibold text-green-900">What was assessed with confidence</p>
+          <div className="rounded-xl border border-green-200 bg-green-50/70 p-3 dark:border-green-500/40 dark:bg-green-950/40">
+            <p className="text-xs font-semibold text-green-900 dark:text-green-200">What was assessed with confidence</p>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {result.concerns.assessedDomains.length > 0 ? (
                 result.concerns.assessedDomains.map((domain) => (
-                  <Badge key={domain} className="bg-green-100 text-green-900 hover:bg-green-100">
+                  <Badge key={domain} className="bg-green-100 text-green-900 hover:bg-green-100 dark:bg-green-900/70 dark:text-green-100">
                     {formatDomainLabel(domain)}
                   </Badge>
                 ))
               ) : (
-                <p className="text-xs text-green-900/80">No domains were confidently assessed in this run.</p>
+                <p className="text-xs text-green-900/80 dark:text-green-200/80">No domains were confidently assessed in this run.</p>
               )}
             </div>
-            <p className="mt-3 text-xs text-green-900/80">
+            <p className="mt-3 text-xs text-green-900/80 dark:text-green-200/80">
               Keep these observations, and improve the suppressed domains with one cleaner capture.
             </p>
           </div>
@@ -175,7 +176,7 @@ export default function QualityCoachPanel({ result, onRecordAgain }: Props) {
                   key={item}
                   className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs transition-colors ${
                     reviewed
-                      ? "bg-green-100/70 text-green-900"
+                      ? "bg-green-100/70 text-green-900 dark:bg-green-950/50 dark:text-green-100"
                       : "bg-card/70 text-foreground hover:bg-secondary/10"
                   }`}
                   onClick={() => {

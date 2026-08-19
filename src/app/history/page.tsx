@@ -21,6 +21,7 @@ import {
 } from "@/lib/presentation/severity";
 import { collectResultIds, readResultRaw } from "@/lib/session/sessionStorage";
 import { fetchRecentResultsFromCloud, type CloudResultRecord } from "@/lib/db/cloudStorage";
+import { useAuthRole } from "@/lib/auth/useAuthRole";
 
 type HistoryStatus = "stable" | "follow_up" | "retake";
 
@@ -204,6 +205,9 @@ function humanConcern(level: string): string {
 }
 
 export default function HistoryPage() {
+  const role = useAuthRole();
+  const resultHref = (id: string) =>
+    role === "clinician" ? `/results/${id}/clinician` : `/results/${id}`;
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | HistoryStatus>("all");
   const [localRows, setLocalRows] = useState<HistoryRow[]>([]);
@@ -306,7 +310,7 @@ export default function HistoryPage() {
   }, [allRows]);
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-5">
+    <div className="w-full space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="medical-title text-2xl font-semibold sm:text-3xl">Past walking checks</h1>
@@ -322,7 +326,7 @@ export default function HistoryPage() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { label: "All", value: stats.total },
           { label: "Follow-up", value: stats.followUp },
@@ -376,12 +380,12 @@ export default function HistoryPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {rows.map((row) => {
             const meta = statusMeta(row.status);
             const StatusIcon = meta.icon;
             return (
-              <Link key={row.id} href={`/results/${row.id}`} className="block">
+              <Link key={row.id} href={resultHref(row.id)} className="block">
                 <article className="medical-surface overflow-hidden transition-colors hover:bg-muted/30">
                   <div className="flex h-28 items-center justify-center bg-muted/50">
                     <span className="inline-flex size-12 items-center justify-center rounded-full bg-card text-primary">

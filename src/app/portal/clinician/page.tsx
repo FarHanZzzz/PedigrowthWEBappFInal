@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatAgeMonths } from "@/lib/presentation/age";
 import { collectResultIds, readResultRaw } from "@/lib/session/sessionStorage";
 import { fetchRecentResultsFromCloud, type CloudResultRecord } from "@/lib/db/cloudStorage";
+import { useAuthRole } from "@/lib/auth/useAuthRole";
 import {
   CONCERN_LABELS,
   FOLLOWUP_BADGE_STYLES,
@@ -146,6 +147,8 @@ function statusBadgeProps(status: RowStatus) {
 }
 
 export default function ClinicianPortalPage() {
+  const role = useAuthRole();
+  const canOpenFamilyView = role === "admin";
   const [localPatients, setLocalPatients] = useState<PatientRow[]>([]);
   const [cloudPatients, setCloudPatients] = useState<PatientRow[]>([]);
   const [query, setQuery] = useState("");
@@ -243,7 +246,7 @@ export default function ClinicianPortalPage() {
   }, [patients, query, noteFilter]);
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6">
+    <div className="w-full space-y-6">
       <section className="medical-surface p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">
@@ -401,11 +404,13 @@ export default function ClinicianPortalPage() {
                                   Open packet
                                 </Button>
                               </Link>
+                              {canOpenFamilyView && (
                               <Link href={`/results/${patient.id}`}>
                                 <Button size="sm" variant="outline" className="w-full gap-1.5 rounded-lg text-xs">
                                   Family view
                                 </Button>
                               </Link>
+                              )}
                             </div>
                           </td>
                         </tr>

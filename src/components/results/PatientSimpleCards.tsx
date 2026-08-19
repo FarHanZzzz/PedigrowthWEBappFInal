@@ -22,9 +22,9 @@ function statusFromPriority(priority: FollowupPriority): string {
 }
 
 function statusBadgeClass(priority: FollowupPriority): string {
-  if (priority === "specialist") return "border-red-200 bg-red-50 text-red-800";
-  if (priority === "earlier_review") return "border-amber-200 bg-amber-50 text-amber-800";
-  return "border-emerald-200 bg-emerald-50 text-emerald-800";
+  if (priority === "specialist") return "border-red-200 bg-red-50 text-red-800 dark:border-red-500/40 dark:bg-red-950/50 dark:text-red-200";
+  if (priority === "earlier_review") return "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/40 dark:bg-amber-950/50 dark:text-amber-200";
+  return "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/40 dark:bg-emerald-950/50 dark:text-emerald-200";
 }
 
 export default function PatientSimpleCards({

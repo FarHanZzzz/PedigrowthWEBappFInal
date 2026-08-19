@@ -16,7 +16,7 @@ export const metadata = {
 
 export default function ClinicianEntryPage() {
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-8 py-4 sm:py-8">
+    <div className="w-full space-y-8">
       <div>
         <p className="text-sm font-medium text-primary">Clinician workspace</p>
         <h1 className="medical-title mt-2 text-3xl font-semibold leading-tight sm:text-4xl">

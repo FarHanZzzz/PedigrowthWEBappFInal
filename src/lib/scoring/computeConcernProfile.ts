@@ -1,12 +1,11 @@
 // PEDI-GROWTH — Concern Profile Computation (Frontal-First + Graceful Degradation)
 //
 // GRACEFUL DEGRADATION PRINCIPLE:
-// In best-effort mode, concerns are CAPPED at 'mild' and follow-up
-// priority is capped at 'routine'. This prevents overconfident escalation
-// from noisy, low-quality input while still providing useful partial results.
+// In best-effort mode, concerns are capped by confidenceMultiplier
+// (mild if very low, moderate if limited, full range if adequate).
 
 import type { GaitFeatureSet, ConcernLevel, AssessmentMode, FollowupPriority } from '@/lib/types';
-import { scoreConcerns } from '@/lib/policy/concern-thresholds';
+import { scoreConcerns, aggregateOverallLevel } from '@/lib/policy/concern-thresholds';
 import type { VideoQualityAssessment } from '@/lib/quality/qualityTypes';
 import {
   BEST_EFFORT_CONCERN_CAP,
@@ -49,11 +48,10 @@ function capConcern(level: ConcernLevel, cap: ConcernLevel): ConcernLevel {
  * Compute the full concern profile from real features and quality data.
  *
  * Best-effort rules:
- * 1. Apply confidence multiplier from quality to all features
- * 2. Cap all concerns at BEST_EFFORT_CONCERN_CAP ('mild')
- * 3. Cap follow-up priority at BEST_EFFORT_PRIORITY_CAP ('routine')
- * 4. Suppress metrics not in quality.usableMetrics
- * 5. Add "preliminary" framing to all notes
+ * 1. Apply confidence multiplier from quality to displayed metrics
+ * 2. Cap concerns by confidenceMultiplier in best-effort mode
+ * 3. Never hide a computed domain unless quality mode is cannot_assess
+ * 4. Add "preliminary" framing to notes when quality is limited
  */
 export function computeConcernProfile(
   features: GaitFeatureSet,
@@ -130,11 +128,7 @@ export function computeConcernProfile(
 
   // Overall concern level
   const levels: ConcernLevel[] = [asymmetry, irregularRhythm, lateralInstability, pathDeviation];
-  const overallLevel: ConcernLevel =
-    levels.includes('significant') ? 'significant' :
-    levels.includes('moderate') ? 'moderate' :
-    levels.includes('mild') ? 'mild' :
-    'none';
+  const overallLevel = aggregateOverallLevel(levels);
 
   // Follow-up priority capping in best-effort mode.
   // Keep urgent routing visible when signal confidence is adequate.

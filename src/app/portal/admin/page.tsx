@@ -227,7 +227,7 @@ export default function AdminPortalPage() {
   }), [rows]);
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-5">
+    <div className="w-full space-y-5">
       <section className="medical-surface p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="space-y-1">
@@ -275,9 +275,9 @@ export default function AdminPortalPage() {
         {rows.length > 0 && (
           <section className="grid gap-3 sm:grid-cols-3">
             {[
-              { label: "Quality: Pass", value: stats.qPass, cls: "border-emerald-300 bg-emerald-50 text-emerald-800" },
-              { label: "Quality: Borderline", value: stats.qBorderline, cls: "border-amber-300 bg-amber-50 text-amber-900" },
-              { label: "Quality: Fail", value: stats.qFail, cls: "border-red-300 bg-red-50 text-red-900" },
+              { label: "Quality: Pass", value: stats.qPass, cls: "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-500/40 dark:bg-emerald-950/50 dark:text-emerald-200" },
+              { label: "Quality: Borderline", value: stats.qBorderline, cls: "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/50 dark:text-amber-200" },
+              { label: "Quality: Fail", value: stats.qFail, cls: "border-red-300 bg-red-50 text-red-900 dark:border-red-500/40 dark:bg-red-950/50 dark:text-red-200" },
             ].map((item) => (
               <Card key={item.label} className="med-slide-up bg-card">
                 <CardContent className="p-4">

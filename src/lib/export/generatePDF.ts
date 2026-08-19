@@ -3,6 +3,7 @@
 // No external dependency required — uses the print stylesheet in globals.css.
 
 import { CONCERN_HEX_COLORS, CONCERN_LABELS, isConcernLevel } from "@/lib/presentation/severity";
+import { isConcernDomainKey } from "@/lib/scoring/metricRoles";
 
 export interface PDFExportData {
   childNickname: string;
@@ -30,8 +31,12 @@ export function exportReportAsPDF(data: PDFExportData): void {
     return;
   }
 
+  const overallLevel = isConcernLevel(data.concerns.overallLevel) ? data.concerns.overallLevel : "none";
+  const overallLabel = CONCERN_LABELS[overallLevel];
+  const overallColor = CONCERN_HEX_COLORS[overallLevel];
+
   const concernRows = Object.entries(data.concerns)
-    .filter(([, level]) => typeof level === "string" && isConcernLevel(level))
+    .filter(([domain, level]) => isConcernDomainKey(domain) && typeof level === "string" && isConcernLevel(level))
     .map(([domain, level]) => {
       const concernLevel = isConcernLevel(level) ? level : "none";
       const color = CONCERN_HEX_COLORS[concernLevel];
@@ -102,6 +107,10 @@ export function exportReportAsPDF(data: PDFExportData): void {
   </table>
 
   <h2>Concern Levels</h2>
+  <p style="margin: 0 0 12px; font-size: 13px;">
+    Overall:
+    <span style="display:inline-block; padding: 2px 10px; border-radius: 12px; background: ${overallColor}22; color: ${overallColor}; font-weight: 600; font-size: 12px;">${overallLabel}</span>
+  </p>
   <table>${concernRows}</table>
 
   <h2>Measured Metrics</h2>
