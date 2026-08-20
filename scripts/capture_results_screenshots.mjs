@@ -5,7 +5,7 @@ const baseUrl = process.argv[2] ?? "http://127.0.0.1:3000";
 const label = process.argv[3] ?? "before";
 const outDir = "public/demo/reports/screenshots";
 
-function buildSeedResult(resultId, sessionId) {
+export function buildSeedResult(resultId, sessionId) {
   const analyzedAt = new Date().toISOString();
   const frameCount = 16;
   const durationMs = 6000;
@@ -609,7 +609,10 @@ async function run() {
   console.log(`Captured deterministic screenshots for '${label}' at ${baseUrl}`);
 }
 
-run().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+const invokedDirectly = process.argv[1]?.replaceAll("\\", "/").endsWith("capture_results_screenshots.mjs");
+if (invokedDirectly) {
+  run().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}
