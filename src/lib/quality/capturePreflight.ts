@@ -1,3 +1,9 @@
+import {
+  getSeekTimeoutMs,
+  prepareAnalysisVideo,
+  seekVideoTo,
+} from '@/lib/pose/videoFrameSource';
+
 export type PreflightSeverity = 'pass' | 'warning' | 'fail';
 
 export interface CapturePreflightIssue {
@@ -22,23 +28,13 @@ const PREVIEW_SECONDS = 2.5;
 const SAMPLE_INTERVAL_SECONDS = 0.5;
 
 export async function runCapturePreflight(videoBlob: Blob): Promise<CapturePreflightResult> {
-  const video = document.createElement('video');
-  video.muted = true;
-  video.playsInline = true;
-  video.preload = 'auto';
-
-  const blobUrl = URL.createObjectURL(videoBlob);
-  video.src = blobUrl;
+  const prepared = await prepareAnalysisVideo(videoBlob);
+  const video = prepared.video;
 
   try {
-    await new Promise<void>((resolve, reject) => {
-      video.onloadedmetadata = () => resolve();
-      video.onerror = () => reject(new Error('Failed to load video for preflight check.'));
-    });
-
     const width = video.videoWidth;
     const height = video.videoHeight;
-    const durationSeconds = Number.isFinite(video.duration) ? video.duration : 0;
+    const durationSeconds = prepared.durationSeconds;
 
     const canvas = document.createElement('canvas');
     canvas.width = 160;
@@ -63,7 +59,7 @@ export async function runCapturePreflight(videoBlob: Blob): Promise<CapturePrefl
 
     let previousFrame: Uint8ClampedArray | null = null;
     for (const time of sampleTimes) {
-      await seekTo(video, time);
+      await seekVideoTo(video, time, getSeekTimeoutMs());
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const image = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
 
@@ -122,49 +118,8 @@ export async function runCapturePreflight(videoBlob: Blob): Promise<CapturePrefl
       recommendations,
     };
   } finally {
-    URL.revokeObjectURL(blobUrl);
-    video.remove();
+    prepared.dispose();
   }
-}
-
-async function seekTo(video: HTMLVideoElement, seconds: number): Promise<void> {
-  await new Promise<void>((resolve) => {
-    let timeout: ReturnType<typeof setTimeout> | null = null;
-    
-    const onSeeked = () => {
-      cleanup();
-      resolve();
-    };
-    const onError = () => {
-      cleanup();
-      resolve(); // Resolve anyway to proceed instead of hanging or failing the whole check
-    };
-    const cleanup = () => {
-      if (timeout !== null) {
-        clearTimeout(timeout);
-      }
-      video.removeEventListener('seeked', onSeeked);
-      video.removeEventListener('error', onError);
-    };
-
-    video.addEventListener('seeked', onSeeked);
-    video.addEventListener('error', onError);
-    
-    const targetTime = Math.min(Math.max(seconds, 0), Math.max(video.duration - 0.05, 0));
-    
-    if (Math.abs(video.currentTime - targetTime) < 0.01) {
-      cleanup();
-      resolve();
-      return;
-    }
-    
-    video.currentTime = targetTime;
-    
-    timeout = setTimeout(() => {
-      cleanup();
-      resolve(); // Timeout fallback
-    }, 1500); // Wait at most 1.5s per frame
-  });
 }
 
 function buildDurationIssue(durationSeconds: number): CapturePreflightIssue {

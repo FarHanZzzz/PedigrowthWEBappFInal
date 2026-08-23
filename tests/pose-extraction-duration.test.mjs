@@ -17,4 +17,5 @@ test('resolveExtractionDuration handles invalid inputs safely', () => {
   assert.equal(resolveExtractionDuration(0), 0);
   assert.equal(resolveExtractionDuration(-1), 0);
   assert.equal(resolveExtractionDuration(Number.NaN), 0);
+  assert.equal(resolveExtractionDuration(Number.POSITIVE_INFINITY), 0);
 });

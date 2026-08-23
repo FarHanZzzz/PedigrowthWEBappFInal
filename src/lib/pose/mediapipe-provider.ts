@@ -10,6 +10,7 @@
 // calls to ensure monotonic ordering.
 
 import type { PoseProvider, LandmarkFrame, Landmark } from '@/lib/types';
+import { isLikelyMobileBrowser } from '@/lib/pose/videoFrameSource';
 
 const WASM_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm';
 const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task';
@@ -51,18 +52,37 @@ export class MediaPipePoseProvider implements PoseProvider {
     const { FilesetResolver, PoseLandmarker } = await import('@mediapipe/tasks-vision');
 
     const vision = await FilesetResolver.forVisionTasks(WASM_CDN);
+    const mobile = isLikelyMobileBrowser();
+    const delegates = mobile
+      ? (['CPU', 'GPU'] as const)
+      : (['GPU', 'CPU'] as const);
+    const trackingConfidence = mobile ? 0.65 : 0.75;
+    const presenceConfidence = mobile ? 0.6 : 0.7;
 
-    this.landmarker = await PoseLandmarker.createFromOptions(vision, {
-      baseOptions: {
-        modelAssetPath: MODEL_URL,
-        delegate: 'GPU',
-      },
-      runningMode: 'VIDEO',
-      numPoses: 1,
-      minPoseDetectionConfidence: 0.5,
-      minPosePresenceConfidence: 0.7,
-      minTrackingConfidence: 0.75,
-    });
+    let lastError: unknown = null;
+    for (const delegate of delegates) {
+      try {
+        this.landmarker = await PoseLandmarker.createFromOptions(vision, {
+          baseOptions: {
+            modelAssetPath: MODEL_URL,
+            delegate,
+          },
+          runningMode: 'VIDEO',
+          numPoses: 1,
+          minPoseDetectionConfidence: mobile ? 0.45 : 0.5,
+          minPosePresenceConfidence: presenceConfidence,
+          minTrackingConfidence: trackingConfidence,
+        });
+        return;
+      } catch (error) {
+        lastError = error;
+        console.warn(`[Pedi-Growth] MediaPipe ${delegate} init failed; trying fallback.`, error);
+      }
+    }
+
+    throw lastError instanceof Error
+      ? lastError
+      : new Error('Pose model initialization failed on this device.');
   }
 
   /**
@@ -78,7 +98,7 @@ export class MediaPipePoseProvider implements PoseProvider {
   }
 
   async extractFrame(
-    frame: ImageBitmap | HTMLVideoElement,
+    frame: ImageBitmap | HTMLVideoElement | HTMLCanvasElement,
     timestampMs?: number,
   ): Promise<LandmarkFrame> {
     if (!this.landmarker) {

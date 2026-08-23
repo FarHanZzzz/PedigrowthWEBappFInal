@@ -11,6 +11,7 @@
 //   cannot_assess    → no analysis possible, explain why, offer retry
 
 import { createPoseProvider, extractLandmarkSequence } from '@/lib/pose';
+import { isLikelyMobileBrowser, prepareAnalysisVideo } from '@/lib/pose/videoFrameSource';
 import { assessVideoQuality } from '@/lib/quality/assessVideoQuality';
 import { smoothLandmarks } from '@/lib/analysis/smoothing';
 import { correctLRSwaps } from '@/lib/analysis/swapCorrection';
@@ -293,94 +294,109 @@ export async function runAnalysisPipeline(
     report(1, 1);
 
     try {
-      // Stage 2: Quality assessment
-      report(2);
       const videoBlob = videoData.blob;
-      const { assessment } = await assessVideoQuality(
-        provider,
-        videoBlob,
-        (pct) => report(2, pct),
-      );
-      report(2, 1);
 
-      // ─── GRACEFUL DEGRADATION: only refuse for cannot_assess ───
-      if (assessment.assessmentMode === 'cannot_assess') {
-        return makeCannotAssessResult(
-          nickname,
-          ageMonths,
-          assessment,
-          buildRunProvenance({
-            classification: 'real_analysis',
-            validationMode,
-            sourceType: options.sourceType ?? 'upload',
-            sourceClipId: options.sourceClipId ?? null,
-            sourceClipFilename: options.sourceClipFilename ?? videoData.name,
-            approvedForDemo: options.approvedForDemo ?? null,
-            modelId,
-            modelLabel,
-          }),
-          intakeContext,
-        );
-      }
+      // Prepare the clip once — phone browsers are sensitive to repeated decode/seek passes.
+      const prepared = await prepareAnalysisVideo(videoBlob);
 
-      sampleFps = computeAdaptiveSamplingFps(
-        assessment,
-        videoData.blob.size,
-      );
-
-      // Stage 3: Extract full landmark sequence
-      report(3);
-
-      // CRITICAL: Reset MediaPipe's timestamp sequence.
-      // Quality assessment used timestamps 0→N. If we start extraction at 0 again,
-      // MediaPipe crashes with "Packet timestamp mismatch". This offset ensures
-      // all subsequent timestamps are strictly increasing.
-      if ('resetTimestampSequence' in provider) {
-        (provider as { resetTimestampSequence: () => void }).resetTimestampSequence();
-      }
-
-      const video = document.createElement('video');
-      video.muted = true;
-      video.playsInline = true;
-      video.preload = 'auto';
-
-      const videoURL = URL.createObjectURL(videoBlob);
       try {
-        await new Promise<void>((resolve, reject) => {
-          video.onloadedmetadata = () => resolve();
-          video.onerror = () => reject(new Error('Video load failed'));
-          video.src = videoURL;
-        });
-        await new Promise<void>((resolve) => {
-          if (video.readyState >= 2) { resolve(); return; }
-          video.oncanplay = () => resolve();
-        });
+        // Stage 2: Quality assessment
+        report(2);
+        const { assessment } = await assessVideoQuality(
+          provider,
+          videoBlob,
+          (pct) => report(2, pct),
+          prepared,
+        );
+        report(2, 1);
+
+        // ─── GRACEFUL DEGRADATION: only refuse for cannot_assess ───
+        if (assessment.assessmentMode === 'cannot_assess') {
+          return makeCannotAssessResult(
+            nickname,
+            ageMonths,
+            assessment,
+            buildRunProvenance({
+              classification: 'real_analysis',
+              validationMode,
+              sourceType: options.sourceType ?? 'upload',
+              sourceClipId: options.sourceClipId ?? null,
+              sourceClipFilename: options.sourceClipFilename ?? videoData.name,
+              approvedForDemo: options.approvedForDemo ?? null,
+              modelId,
+              modelLabel,
+            }),
+            intakeContext,
+          );
+        }
+
+        sampleFps = computeAdaptiveSamplingFps(
+          assessment,
+          videoData.blob.size,
+        );
+
+        // Stage 3: Extract full landmark sequence
+        report(3);
+
+        // CRITICAL: Reset MediaPipe's timestamp sequence.
+        // Quality assessment used timestamps 0→N. If we start extraction at 0 again,
+        // MediaPipe crashes with "Packet timestamp mismatch". This offset ensures
+        // all subsequent timestamps are strictly increasing.
+        if ('resetTimestampSequence' in provider) {
+          (provider as { resetTimestampSequence: () => void }).resetTimestampSequence();
+        }
+
+        try {
+          prepared.video.currentTime = 0;
+        } catch {
+          // Some mobile clips cannot rewind cleanly; extraction still proceeds from the current frame.
+        }
 
         const extractionStart = performance.now();
-        let rawFrames = await extractLandmarkSequence(provider, video, sampleFps, (frac) => report(3, frac));
+        let rawFrames = await extractLandmarkSequence(
+          provider,
+          prepared.video,
+          sampleFps,
+          (frac) => report(3, frac),
+          prepared.durationSeconds,
+        );
         const firstPassMs = performance.now() - extractionStart;
 
         // Recovery pass for weak detections: retry with a denser/safer sampling profile
         // and keep whichever pass yields the better frame-level detection rate.
-        // Skipped when the first pass was already slow — doubling a slow stage
-        // makes the UI look frozen for very little analytical gain.
         const initialDetectedFrames = countDetectedFrames(rawFrames);
         const initialDetectionRate = rawFrames.length > 0 ? initialDetectedFrames / rawFrames.length : 0;
+        const mobile = isLikelyMobileBrowser();
+        const recoveryBudgetMs = mobile ? 30_000 : 45_000;
         const shouldRetryExtraction =
-          firstPassMs < 45_000 &&
+          firstPassMs < recoveryBudgetMs &&
           shouldRunRecoveryPass(
             initialDetectionRate,
             assessment.frameUsabilityPct,
           );
 
         if (shouldRetryExtraction) {
-          const retryFps = clamp(sampleFps + 2, 10, 18);
+          const retryFps = mobile
+            ? clamp(sampleFps + 1, 6, 8)
+            : clamp(sampleFps + 2, 10, 18);
           if (retryFps !== sampleFps) {
             if ('resetTimestampSequence' in provider) {
               (provider as { resetTimestampSequence: () => void }).resetTimestampSequence();
             }
 
-            const retryFrames = await extractLandmarkSequence(provider, video, retryFps, (frac) => report(3, frac));
+            try {
+              prepared.video.currentTime = 0;
+            } catch {
+              // Ignore rewind failures before the recovery pass.
+            }
+
+            const retryFrames = await extractLandmarkSequence(
+              provider,
+              prepared.video,
+              retryFps,
+              (frac) => report(3, frac),
+              prepared.durationSeconds,
+            );
             const retryDetectedFrames = countDetectedFrames(retryFrames);
             const retryDetectionRate = retryFrames.length > 0 ? retryDetectedFrames / retryFrames.length : 0;
 
@@ -623,9 +639,9 @@ export async function runAnalysisPipeline(
             footStrikes,
             gaitCycles,
             quality: assessment,
-            videoWidth: video.videoWidth,
-            videoHeight: video.videoHeight,
-            videoDurationMs: video.duration * 1000,
+            videoWidth: prepared.video.videoWidth,
+            videoHeight: prepared.video.videoHeight,
+            videoDurationMs: prepared.durationSeconds * 1000,
             fps: sampleFps,
             metricResults: metricTraceInputs,
             suppressedResults: suppressedTraceEntries,
@@ -700,16 +716,9 @@ export async function runAnalysisPipeline(
 
         report(6, 1);
 
-        // Cleanup video element (but keep blob in IndexedDB for results page)
-        URL.revokeObjectURL(videoURL);
-        video.remove();
-
         return withGeneratedReports(result);
-      } catch (err) {
-        // Cleanup on inner failure
-        URL.revokeObjectURL(videoURL);
-        video.remove();
-        throw err;
+      } finally {
+        prepared.dispose();
       }
     } finally {
       provider.dispose();
@@ -990,6 +999,9 @@ function computeAdaptiveSamplingFps(
   }
 
   fps = Math.round(fps * (1 - decodePenalty));
+  if (isLikelyMobileBrowser()) {
+    return clamp(fps, 6, 10);
+  }
   return clamp(fps, 10, 18);
 }
 

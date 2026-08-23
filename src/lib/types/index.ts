@@ -149,7 +149,10 @@ export interface PoseProvider {
   readonly name: string;
   readonly version: string;
   initialize(): Promise<void>;
-  extractFrame(frame: ImageBitmap | HTMLVideoElement, timestampMs?: number): Promise<LandmarkFrame>;
+  extractFrame(
+    frame: ImageBitmap | HTMLVideoElement | HTMLCanvasElement,
+    timestampMs?: number,
+  ): Promise<LandmarkFrame>;
   dispose(): void;
 }
 

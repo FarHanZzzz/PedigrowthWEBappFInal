@@ -2,13 +2,18 @@
 // Interface and factory for swappable pose estimation backends.
 
 import type { PoseProvider, LandmarkFrame } from '@/lib/types';
+import {
+  getExtractionTimeBudgetMs,
+  getSeekTimeoutMs,
+  resolvePlayableDuration,
+  seekVideoTo,
+  snapshotVideoFrameAsync,
+} from '@/lib/pose/videoFrameSource';
 
 const MAX_ANALYSIS_DURATION_SECONDS = 20;
-const SEEK_TIMEOUT_MS = 1500;
 // Hard cap for one extraction pass. On slow devices (CPU-only WASM inference,
 // sluggish video seeks) an unbounded loop can run for many minutes and the UI
 // appears frozen. Past this budget we stop and analyze the frames we have.
-const EXTRACTION_TIME_BUDGET_MS = 90_000;
 
 /**
  * Create a pose provider instance.
@@ -39,28 +44,36 @@ export async function extractLandmarkSequence(
   video: HTMLVideoElement,
   targetFps: number = 10,
   onProgress?: (fraction: number) => void,
+  durationOverride?: number,
 ): Promise<LandmarkFrame[]> {
   const frames: LandmarkFrame[] = [];
-  const duration = resolveExtractionDuration(video.duration);
+  const duration = resolveExtractionDuration(
+    durationOverride && durationOverride > 0
+      ? durationOverride
+      : resolvePlayableDuration(video),
+  );
   if (duration <= 0) return frames;
 
   const interval = 1 / targetFps;
   const sampleCount = Math.max(1, Math.floor(duration * targetFps));
   const startedAt = performance.now();
+  const canvas = document.createElement('canvas');
+  const extractionBudgetMs = getExtractionTimeBudgetMs();
 
   for (let sampleIdx = 0; sampleIdx < sampleCount; sampleIdx++) {
-    if (performance.now() - startedAt > EXTRACTION_TIME_BUDGET_MS) {
+    if (performance.now() - startedAt > extractionBudgetMs) {
       console.warn(
-        `[Pedi-Growth] Landmark extraction exceeded ${EXTRACTION_TIME_BUDGET_MS / 1000}s budget; ` +
+        `[Pedi-Growth] Landmark extraction exceeded ${extractionBudgetMs / 1000}s budget; ` +
         `continuing with ${frames.length}/${sampleCount} sampled frames.`,
       );
       break;
     }
 
     const time = Math.min(sampleIdx * interval, duration);
-    await seekVideo(video, time, SEEK_TIMEOUT_MS);
+    await seekVideoTo(video, time, getSeekTimeoutMs());
 
-    const frame = await provider.extractFrame(video, time * 1000);
+    const source = await snapshotVideoFrameAsync(video, canvas);
+    const frame = await provider.extractFrame(source, time * 1000);
     frames.push(frame);
 
     // Report sub-stage progress so the UI doesn't appear stuck
@@ -78,39 +91,4 @@ export function resolveExtractionDuration(videoDurationSeconds: number): number 
   }
   // Cap extraction window to keep browser-side analysis responsive on lower-end devices.
   return Math.min(videoDurationSeconds, MAX_ANALYSIS_DURATION_SECONDS);
-}
-
-async function seekVideo(
-  video: HTMLVideoElement,
-  timeSeconds: number,
-  timeoutMs: number,
-): Promise<void> {
-  const duration = Number.isFinite(video.duration) ? video.duration : timeSeconds;
-  const clampedTime = Math.max(0, Math.min(timeSeconds, duration));
-
-  if (Math.abs(video.currentTime - clampedTime) < 0.001 && video.readyState >= 2) {
-    return;
-  }
-
-  await new Promise<void>((resolve) => {
-    let done = false;
-
-    const finish = () => {
-      if (done) return;
-      done = true;
-      clearTimeout(timer);
-      video.removeEventListener('seeked', onSeeked);
-      resolve();
-    };
-
-    const onSeeked = () => finish();
-    const timer = setTimeout(finish, timeoutMs);
-
-    video.addEventListener('seeked', onSeeked, { once: true });
-    try {
-      video.currentTime = clampedTime;
-    } catch {
-      finish();
-    }
-  });
 }

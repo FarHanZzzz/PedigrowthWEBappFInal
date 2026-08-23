@@ -42,7 +42,7 @@ function toPlayableBlob(entry: {
   }
 
   if (entry.buffer instanceof ArrayBuffer && entry.buffer.byteLength > 0) {
-    return new Blob([entry.buffer], { type });
+    return new Blob([entry.buffer.slice(0)], { type });
   }
 
   return null;

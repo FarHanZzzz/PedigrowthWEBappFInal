@@ -42,6 +42,7 @@ import {
 } from "@/lib/session/sessionStorage";
 import { getApprovedHeroClip, getHeroClipDefinition } from "@/lib/demo/heroManifest";
 import { runCapturePreflight, type CapturePreflightResult } from "@/lib/quality/capturePreflight";
+import { isLikelyMobileBrowser } from "@/lib/pose/videoFrameSource";
 import {
   Dialog,
   DialogContent,
@@ -250,7 +251,11 @@ export default function CapturePage() {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
         audio: false,
       });
 
@@ -270,6 +275,8 @@ export default function CapturePage() {
       recordedChunksRef.current = [];
 
       const preferredTypes = [
+        "video/mp4;codecs=avc1",
+        "video/mp4",
         "video/webm;codecs=vp9",
         "video/webm;codecs=vp8",
         "video/webm",
@@ -311,7 +318,7 @@ export default function CapturePage() {
         closeCamera();
       };
 
-      recorder.start();
+      recorder.start(isLikelyMobileBrowser() ? 250 : undefined);
       setIsRecordingCamera(true);
       setCameraError(null);
     } catch {
