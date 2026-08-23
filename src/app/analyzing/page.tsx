@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { JourneyStepper } from "@/components/layout/JourneyStepper";
 import { Button } from "@/components/ui/button";
+import AnalysisProgressVisual from "@/components/analyzing/AnalysisProgressVisual";
 import { runAnalysisPipeline } from "@/lib/session/analysisSession";
 import { getVideo, saveResult, storeVideo } from "@/lib/session/videoStore";
 import {
@@ -26,6 +27,16 @@ const STAGE_LABELS = [
   "Measuring the walk",
   "Writing the summary",
   "Finishing up",
+];
+
+const STAGE_HINTS = [
+  "Loading your clip from this device.",
+  "Starting on-device pose detection.",
+  "Checking lighting, framing, and clip length.",
+  "Marking shoulders, hips, knees, and ankles.",
+  "Turning movement into walking signals.",
+  "Building the family summary and clinician packet.",
+  "Saving results so you can reopen them later.",
 ];
 
 export default function AnalyzingPage() {
@@ -58,7 +69,6 @@ export default function AnalyzingPage() {
     }
 
     if (!session) {
-      // Recover from stale or malformed session payloads instead of crashing the page.
       router.replace("/capture");
       return;
     }
@@ -166,7 +176,6 @@ export default function AnalyzingPage() {
           await saveResultToCloud(resultId, payload);
         } catch (e) {
           console.error("Failed to save to Supabase cloud:", e);
-          // Fallback to IndexedDB if network fails so the demo continues
         }
 
         saveResult(resultId, payload).catch(() => {});
@@ -208,10 +217,15 @@ export default function AnalyzingPage() {
     };
   }, [router, analysisAttempt]);
 
+  const stageIndex = Math.max(0, Math.min(currentStage, STAGE_LABELS.length - 1));
   const friendlyStage =
     currentStage >= STAGE_LABELS.length
       ? "Summary ready"
-      : STAGE_LABELS[Math.max(0, Math.min(currentStage, STAGE_LABELS.length - 1))];
+      : STAGE_LABELS[stageIndex];
+  const stageHint =
+    currentStage >= STAGE_HINTS.length
+      ? "Opening your walking summary."
+      : STAGE_HINTS[stageIndex];
 
   if (error) {
     return (
@@ -244,39 +258,81 @@ export default function AnalyzingPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-md space-y-8 py-6">
+    <div className="mx-auto w-full max-w-lg space-y-6 py-4">
       <JourneyStepper current={3} />
 
       <div className="text-center">
         <h1 className="medical-title text-2xl font-semibold">Looking at the walk</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Usually under a minute. Keep this screen open.</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Analysis runs on this device. Keep this screen open — usually under a minute.
+        </p>
       </div>
 
-      <div className="medical-surface p-6">
-        <div className="flex items-end justify-between gap-3">
-          <p className="text-base font-semibold">{friendlyStage}</p>
-          <p className="text-sm font-medium text-primary">{Math.round(progress)}%</p>
+      <div className="medical-surface overflow-hidden p-5 sm:p-6">
+        <AnalysisProgressVisual
+          currentStage={stageIndex}
+          stageProgress={stageProgress}
+          overallProgress={progress}
+          stageLabel={friendlyStage}
+        />
+
+        <div className="mt-6 space-y-3 border-t border-border/60 pt-5">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-medium">{friendlyStage}</p>
+            <p className="text-sm font-semibold text-primary">{Math.round(progress)}%</p>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-[width] duration-500"
+              style={{ width: `${Math.max(progress, 4)}%` }}
+            />
+          </div>
+          <p className="text-xs leading-relaxed text-muted-foreground">{stageHint}</p>
         </div>
-        <div className="mt-4 h-2 overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full rounded-full bg-primary transition-[width] duration-300"
-            style={{ width: `${Math.max(progress, 6)}%` }}
-          />
-        </div>
-        <p className="mt-3 text-xs text-muted-foreground">
-          Finding body position and measuring step timing from this clip.
-        </p>
+      </div>
+
+      <div className="medical-surface p-4">
+        <ol className="space-y-2">
+          {STAGE_LABELS.map((label, index) => {
+            const isDone = index < currentStage;
+            const isActive = index === currentStage && currentStage < STAGE_LABELS.length;
+            return (
+              <li
+                key={label}
+                className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors ${
+                  isActive
+                    ? "bg-primary/10 text-foreground"
+                    : isDone
+                      ? "text-muted-foreground"
+                      : "text-muted-foreground/70"
+                }`}
+              >
+                <span
+                  className={`inline-flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${
+                    isDone
+                      ? "bg-primary/15 text-primary"
+                      : isActive
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {isDone ? "✓" : index + 1}
+                </span>
+                <span className={isActive ? "font-medium" : undefined}>{label}</span>
+              </li>
+            );
+          })}
+        </ol>
       </div>
 
       <div className="flex flex-col items-center gap-3">
         <Button variant="ghost" onClick={() => router.push("/capture")}>
           Cancel
         </Button>
-        <p className="max-w-xs text-center text-xs leading-relaxed text-muted-foreground">
-          Analysis runs on this device. The clip is saved so you can reopen results on phone or desktop.
+        <p className="max-w-sm text-center text-xs leading-relaxed text-muted-foreground">
+          The clip stays on this device while we analyze it. Results reopen on phone or desktop after sign-in.
         </p>
       </div>
     </div>
   );
 }
-

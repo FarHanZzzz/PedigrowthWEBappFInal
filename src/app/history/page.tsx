@@ -24,8 +24,8 @@ import { collectResultIds, readResultRaw } from "@/lib/session/sessionStorage";
 import { deleteAssessmentAsAdmin } from "@/lib/session/deleteAssessment";
 import { fetchRecentResultsFromCloud, type CloudResultRecord } from "@/lib/db/cloudStorage";
 import { useAuthRole } from "@/lib/auth/useAuthRole";
-
-type HistoryStatus = "stable" | "follow_up" | "retake";
+import HistoryCardCover from "@/components/history/HistoryCardCover";
+import type { HistoryStatus } from "@/lib/history/historyTypes";
 
 interface HistoryRow {
   id: string;
@@ -39,6 +39,8 @@ interface HistoryRow {
   status: HistoryStatus;
   qualityResult: string;
   routeLabel: string;
+  sessionId: string | null;
+  videoUrl: string | null;
 }
 
 interface ParsedResultSummary {
@@ -52,9 +54,10 @@ interface ParsedResultSummary {
       monitoringGuidance?: string;
     };
   };
-  trace?: { pipeline?: { direction?: string } };
+  trace?: { sessionId?: string; pipeline?: { direction?: string } };
   session?: { nickname?: string; ageMonths?: number };
   analyzedAt?: string;
+  videoUrl?: string;
 }
 
 function isAnalysisRecord(result: ParsedResultSummary): boolean {
@@ -98,6 +101,9 @@ function toHistoryRow(id: string, result: ParsedResultSummary): HistoryRow | nul
     status: deriveStatus(result),
     qualityResult: String(result?.quality?.result ?? "unknown"),
     routeLabel,
+    sessionId:
+      typeof result?.trace?.sessionId === "string" ? result.trace.sessionId : null,
+    videoUrl: typeof result?.videoUrl === "string" ? result.videoUrl : null,
   };
 }
 
@@ -410,28 +416,33 @@ export default function HistoryPage() {
             const isPending = pendingDeleteId === row.id;
             const isDeleting = deletingId === row.id;
             return (
-              <article key={row.id} className="medical-surface overflow-hidden">
+              <article
+                key={row.id}
+                className="medical-surface group overflow-hidden transition-shadow hover:shadow-md"
+              >
                 <Link href={resultHref(row.id)} className="block">
-                  <div className="flex h-28 items-center justify-center bg-muted/50">
-                    <span className="inline-flex size-12 items-center justify-center rounded-full bg-card text-primary">
-                      <StatusIcon className="h-5 w-5" />
-                    </span>
-                  </div>
+                  <HistoryCardCover
+                    resultId={row.id}
+                    sessionId={row.sessionId}
+                    videoUrl={row.videoUrl}
+                    childName={row.childName}
+                    status={row.status}
+                  />
                   <div className="space-y-2 p-4 pb-2">
                     <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="font-semibold">{row.childName}</p>
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold">{row.childName}</p>
                         <p className="text-xs text-muted-foreground">
                           {row.ageMonths !== null ? formatAgeMonths(row.ageMonths) : "Age unknown"}
                           {row.analyzedAt ? ` · ${new Date(row.analyzedAt).toLocaleDateString()}` : ""}
                         </p>
                       </div>
-                      <Badge variant="outline" className={`gap-1 ${meta.className}`}>
+                      <Badge variant="outline" className={`shrink-0 gap-1 ${meta.className}`}>
                         <StatusIcon className="h-3 w-3" />
                         {meta.label}
                       </Badge>
                     </div>
-                    <p className="text-sm">{humanConcern(row.concernLevel)}</p>
+                    <p className="text-sm font-medium">{humanConcern(row.concernLevel)}</p>
                     {row.reportSummary && (
                       <p className="line-clamp-2 text-sm text-muted-foreground">{row.reportSummary}</p>
                     )}

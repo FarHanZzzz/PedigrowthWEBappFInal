@@ -268,6 +268,105 @@
   }
 }
 
+@keyframes analysis-orbit-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes analysis-scan-sweep {
+  0% {
+    top: 8%;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    top: 88%;
+    opacity: 0;
+  }
+}
+
+@keyframes analysis-landmark-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes analysis-ring-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.analysis-orbit {
+  animation: analysis-orbit-pulse 2.8s ease-in-out infinite;
+}
+
+.analysis-scan-ring {
+  animation: analysis-ring-spin 10s linear infinite;
+}
+
+.analysis-scan-line {
+  animation: analysis-scan-sweep 2.2s ease-in-out infinite;
+}
+
+.analysis-landmark {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.analysis-landmark-1 {
+  animation: analysis-landmark-pulse 1.6s ease-in-out infinite;
+}
+
+.analysis-landmark-2 {
+  animation: analysis-landmark-pulse 1.6s ease-in-out infinite 0.15s;
+}
+
+.analysis-landmark-3 {
+  animation: analysis-landmark-pulse 1.6s ease-in-out infinite 0.3s;
+}
+
+.analysis-landmark-4 {
+  animation: analysis-landmark-pulse 1.6s ease-in-out infinite 0.45s;
+}
+
+.analysis-landmark-5 {
+  animation: analysis-landmark-pulse 1.6s ease-in-out infinite 0.6s;
+}
+
+.analysis-landmark-6 {
+  animation: analysis-landmark-pulse 1.6s ease-in-out infinite 0.75s;
+}
+
+.analysis-landmark-7 {
+  animation: analysis-landmark-pulse 1.6s ease-in-out infinite 0.9s;
+}
+
+.analysis-stage-active {
+  animation: analysis-orbit-pulse 1.8s ease-in-out infinite;
+}
+
 .clinician-packet .print-only {
   display: none;
 }
